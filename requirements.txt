@@ -1,0 +1,11 @@
+flask>=3.0.0
+flask-cors>=4.0.0
+schedule>=1.2.2
+requests>=2.31.0
+yfinance>=0.2.38
+pandas>=2.2.0
+numpy>=2.0.0
+google-generativeai>=0.7.0
+feedparser>=6.0.11
+python-telegram-bot>=21.0
+gunicorn>=22.0.0
