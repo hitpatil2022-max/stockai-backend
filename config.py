@@ -32,7 +32,7 @@ WATCHLIST = [
     "RELIANCE.NS", "LT.NS", "ADANIENT.NS",
 
     # Auto
-    "MARUTI.NS", "TATAMOTORS.NS", "BAJAJ-AUTO.NS",
+    "MARUTI.NS", "TMCV.NS", "TMPV.NS", "BAJAJ-AUTO.NS",
 
     # Pharma
     "SUNPHARMA.NS", "DRREDDY.NS", "CIPLA.NS",
