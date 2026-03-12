@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>India Stock AI — Sign In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060a12;--surface:#0d1525;--border:rgba(255,255,255,0.09);
+  --border2:rgba(255,255,255,0.15);--accent:#00d4aa;--amber:#f59e0b;
+  --red:#ef4444;--text:#e2e8f0;--muted:#64748b;--dim:#94a3b8;
+}
+html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;
+  background:var(--bg);color:var(--text)}
+
+/* grid */
+.bg-grid{position:fixed;inset:0;z-index:0;
+  background-image:linear-gradient(rgba(0,212,170,.025) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(0,212,170,.025) 1px,transparent 1px);
+  background-size:44px 44px;animation:gridDrift 80s linear infinite}
+@keyframes gridDrift{to{background-position:44px 44px,44px 44px}}
+
+/* blobs */
+.blob{position:fixed;border-radius:50%;filter:blur(130px);pointer-events:none;z-index:0}
+.blob-1{width:650px;height:650px;background:rgba(0,212,170,.065);top:-220px;left:-220px;animation:bf 22s ease-in-out infinite alternate}
+.blob-2{width:550px;height:550px;background:rgba(245,158,11,.05);bottom:-180px;right:-180px;animation:bf 28s ease-in-out infinite alternate-reverse}
+@keyframes bf{to{transform:translate(50px,40px) scale(1.12)}}
+
+/* candles strip */
+.candles{position:fixed;bottom:44px;left:0;right:0;display:flex;align-items:flex-end;
+  gap:3px;height:90px;padding:0 16px;z-index:0;opacity:.18;pointer-events:none}
+.candle{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.cwick{width:1px;background:currentColor;opacity:.5}
+.cbody{width:100%;border-radius:2px 2px 0 0;animation:cpulse 3s ease-in-out infinite}
+.candle.up{color:#00d4aa}.candle.dn{color:#ef4444}
+.candle.up .cbody{background:#00d4aa}.candle.dn .cbody{background:#ef4444}
+@keyframes cpulse{0%,100%{opacity:.7}50%{opacity:1}}
+
+/* ticker */
+.ticker-wrap{position:fixed;bottom:0;left:0;right:0;height:40px;
+  background:rgba(0,0,0,.65);border-top:1px solid var(--border);z-index:10;
+  overflow:hidden;display:flex;align-items:center}
+.ticker-inner{display:flex;white-space:nowrap;animation:tickScroll 45s linear infinite}
+.ticker-inner:hover{animation-play-state:paused}
+@keyframes tickScroll{to{transform:translateX(-50%)}}
+.tick{padding:0 22px;font-family:'IBM Plex Mono',monospace;font-size:11px;
+  color:var(--dim);border-right:1px solid var(--border);height:40px;
+  display:flex;align-items:center;gap:8px}
+.tick .sym{color:#fff;font-weight:600}
+.tick .up{color:var(--accent)}.tick .dn{color:var(--red)}
+
+/* layout */
+.layout{position:relative;z-index:5;min-height:100vh;display:flex;
+  align-items:center;justify-content:center;padding:40px 20px 90px}
+
+/* card */
+.card{width:100%;max-width:420px;
+  background:rgba(13,21,37,.88);border:1px solid var(--border2);border-radius:20px;
+  backdrop-filter:blur(24px);
+  box-shadow:0 0 0 1px rgba(0,212,170,.07),0 32px 72px rgba(0,0,0,.65),0 0 90px rgba(0,212,170,.035);
+  padding:40px 38px 36px;animation:cardIn .55s cubic-bezier(.16,1,.3,1) both}
+@keyframes cardIn{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:none}}
+
+/* brand */
+.brand{text-align:center;margin-bottom:28px}
+.brand-icon{width:54px;height:54px;margin:0 auto 12px;
+  background:linear-gradient(135deg,#00d4aa,#0097a7);border-radius:14px;
+  display:flex;align-items:center;justify-content:center;font-size:26px;
+  box-shadow:0 8px 28px rgba(0,212,170,.32)}
+.brand-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;
+  color:#fff;line-height:1;margin-bottom:5px}
+.brand-title span{color:var(--accent)}
+.brand-sub{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:300;
+  color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
+
+/* step panels */
+.step{transition:opacity .3s ease,transform .3s ease}
+.step.hidden{opacity:0;pointer-events:none;position:absolute;transform:translateX(18px)}
+.step.visible{opacity:1;transform:none}
+
+/* labels */
+.field-label{font-size:11.5px;font-weight:600;color:var(--dim);
+  text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;display:block}
+
+/* inputs */
+.inp{width:100%;padding:13px 15px;background:rgba(255,255,255,.04);
+  border:1.5px solid var(--border2);border-radius:10px;
+  color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;
+  outline:none;transition:border-color .2s,box-shadow .2s}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,170,.12)}
+.inp::placeholder{color:var(--muted)}
+
+/* OTP inputs */
+.otp-row{display:flex;gap:10px;justify-content:center;margin:4px 0 2px}
+.otp-digit{width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;
+  font-family:'IBM Plex Mono',monospace;color:#fff;
+  background:rgba(255,255,255,.04);border:1.5px solid var(--border2);border-radius:10px;
+  outline:none;transition:border-color .15s,box-shadow .15s,background .15s;
+  caret-color:var(--accent)}
+.otp-digit:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,170,.15);background:rgba(0,212,170,.04)}
+.otp-digit.filled{border-color:rgba(0,212,170,.5)}
+.otp-digit.err{border-color:var(--red)!important;box-shadow:0 0 0 3px rgba(239,68,68,.12)!important;animation:shake .35s ease}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* remember me */
+.remember-row{display:flex;align-items:center;gap:9px;margin:16px 0 0;cursor:pointer}
+.remember-row input[type=checkbox]{display:none}
+.checkmark{width:18px;height:18px;border:1.5px solid var(--border2);border-radius:5px;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;background:rgba(255,255,255,.04)}
+.remember-row input:checked + .checkmark{background:var(--accent);border-color:var(--accent)}
+.remember-row input:checked + .checkmark::after{content:'✓';font-size:11px;font-weight:800;color:#000}
+.remember-label{font-size:13.5px;color:var(--dim);user-select:none}
+.remember-label span{font-size:11.5px;color:var(--muted);display:block;margin-top:1px}
+
+/* buttons */
+.btn{width:100%;padding:14px;border:none;border-radius:11px;font-size:15px;
+  font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;
+  transition:all .2s;display:flex;align-items:center;justify-content:center;gap:9px}
+.btn-primary{background:linear-gradient(135deg,#00b894,#0097a7);color:#000;
+  box-shadow:0 4px 18px rgba(0,212,170,.28)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(0,212,170,.38)}
+.btn-primary:active{transform:none}
+.btn-primary:disabled{opacity:.55;pointer-events:none}
+.btn-ghost{background:transparent;color:var(--dim);border:1px solid var(--border);
+  font-size:13px;padding:10px;margin-top:8px}
+.btn-ghost:hover{color:#fff;border-color:var(--border2)}
+
+/* divider */
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0;
+  color:var(--muted);font-size:10.5px;font-family:'IBM Plex Mono',monospace;
+  text-transform:uppercase;letter-spacing:1px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border2)}
+
+/* error / success banners */
+.banner{border-radius:9px;padding:11px 14px;font-size:12.5px;
+  font-family:'IBM Plex Mono',monospace;display:flex;align-items:flex-start;
+  gap:8px;margin-bottom:14px;line-height:1.5}
+.banner.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#fca5a5}
+.banner.ok{background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2);color:var(--accent)}
+.banner.hidden{display:none}
+
+/* countdown */
+.resend-row{text-align:center;margin-top:14px;font-size:12.5px;font-family:'IBM Plex Mono',monospace}
+.resend-link{color:var(--accent);cursor:pointer;text-decoration:underline;
+  text-underline-offset:2px;background:none;border:none;font:inherit}
+.resend-link:disabled{color:var(--muted);text-decoration:none;cursor:default}
+#countdown-text{color:var(--muted)}
+
+/* email recap */
+.email-recap{font-size:12.5px;color:var(--dim);margin-bottom:18px;
+  font-family:'IBM Plex Mono',monospace;
+  display:flex;align-items:center;justify-content:space-between}
+.email-recap .addr{color:#e2e8f0;font-weight:600}
+.change-email{font-size:11px;color:var(--accent);cursor:pointer;
+  background:none;border:none;font-family:'IBM Plex Mono',monospace;
+  text-decoration:underline;text-underline-offset:2px}
+
+/* spinner */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:16px;height:16px;border:2px solid rgba(0,0,0,.25);
+  border-top-color:#000;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.btn.loading .spinner{display:block}
+.btn.loading .btn-lbl{display:none}
+
+/* footer */
+.card-footer{margin-top:22px;text-align:center;font-size:11px;color:var(--muted);
+  font-family:'IBM Plex Mono',monospace;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="candles" id="candles"></div>
+
+<div class="layout">
+<div class="card">
+
+  <!-- Brand -->
+  <div class="brand">
+    <div class="brand-icon">📈</div>
+    <div class="brand-title">INDIA STOCK <span>AI</span></div>
+    <div class="brand-sub">NSE · BSE · Intelligence Terminal</div>
+  </div>
+
+  <!-- ───── STEP 1 — Email entry ───── -->
+  <div class="step visible" id="step1">
+    <div id="s1-banner" class="banner hidden"><span id="s1-icon">⚠</span><span id="s1-msg"></span></div>
+
+    <div class="divider">Secure Access</div>
+
+    <label class="field-label" for="emailInp">Your Email Address</label>
+    <input class="inp" type="email" id="emailInp" placeholder="you@gmail.com"
+           autocomplete="email" spellcheck="false">
+
+    <div style="margin-top:18px">
+      <button class="btn btn-primary" id="sendBtn" onclick="sendOtp()">
+        <div class="spinner" id="s1-spin"></div>
+        <span class="btn-lbl">Send Verification Code →</span>
+      </button>
+    </div>
+
+    <div class="card-footer">
+      Access restricted to authorised emails only.<br>
+      A 6-digit code will be sent to your inbox.
+    </div>
+  </div>
+
+  <!-- ───── STEP 2 — OTP entry ───── -->
+  <div class="step hidden" id="step2" style="position:relative">
+    <div id="s2-banner" class="banner hidden"><span id="s2-icon">⚠</span><span id="s2-msg"></span></div>
+
+    <div class="email-recap">
+      <span>Code sent to <span class="addr" id="emailRecap"></span></span>
+      <button class="change-email" onclick="goBack()">Change</button>
+    </div>
+
+    <label class="field-label">6-Digit Verification Code</label>
+    <div class="otp-row" id="otpRow">
+      <input class="otp-digit" id="d0" maxlength="1" inputmode="numeric" autocomplete="one-time-code">
+      <input class="otp-digit" id="d1" maxlength="1" inputmode="numeric">
+      <input class="otp-digit" id="d2" maxlength="1" inputmode="numeric">
+      <input class="otp-digit" id="d3" maxlength="1" inputmode="numeric">
+      <input class="otp-digit" id="d4" maxlength="1" inputmode="numeric">
+      <input class="otp-digit" id="d5" maxlength="1" inputmode="numeric">
+    </div>
+
+    <!-- Remember me -->
+    <label class="remember-row">
+      <input type="checkbox" id="rememberChk">
+      <span class="checkmark" id="checkmark"></span>
+      <span class="remember-label">
+        Keep me signed in
+        <span>Stay logged in for 30 days on this device</span>
+      </span>
+    </label>
+
+    <div style="margin-top:18px">
+      <button class="btn btn-primary" id="verifyBtn" onclick="verifyOtp()">
+        <div class="spinner" id="s2-spin"></div>
+        <span class="btn-lbl">Verify & Sign In</span>
+      </button>
+    </div>
+
+    <!-- Resend countdown -->
+    <div class="resend-row">
+      <span id="countdown-text"></span>
+      <button class="resend-link" id="resendBtn" onclick="resendOtp()" disabled>Resend code</button>
+    </div>
+  </div>
+
+</div><!-- .card -->
+</div><!-- .layout -->
+
+<!-- Ticker strip -->
+<div class="ticker-wrap"><div class="ticker-inner" id="ticker"></div></div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────
+let _email        = '';
+let _countdownId  = null;
+
+// ── Step transitions ─────────────────────────────────────────────────
+function showStep(n) {
+  document.getElementById('step1').className = 'step ' + (n===1 ? 'visible' : 'hidden');
+  document.getElementById('step2').className = 'step ' + (n===2 ? 'visible' : 'hidden');
+}
+
+function goBack() {
+  clearInterval(_countdownId);
+  showStep(1);
+  setBanner(1, '', '');
+  setBanner(2, '', '');
+}
+
+// ── Banner helpers ────────────────────────────────────────────────────
+function setBanner(step, type, msg) {
+  const b = document.getElementById('s'+step+'-banner');
+  const m = document.getElementById('s'+step+'-msg');
+  const i = document.getElementById('s'+step+'-icon');
+  if (!msg) { b.className = 'banner hidden'; return; }
+  b.className = 'banner ' + (type === 'ok' ? 'ok' : 'err');
+  m.textContent = msg;
+  i.textContent = type === 'ok' ? '✓' : '⚠';
+}
+
+// ── Step 1 — Send OTP ────────────────────────────────────────────────
+async function sendOtp(isResend) {
+  const emailInp = document.getElementById('emailInp');
+  const email    = (isResend ? _email : emailInp.value).trim().toLowerCase();
+  if (!email || !email.includes('@') || !email.split('@')[1]?.includes('.')) {
+    setBanner(1, 'err', 'Enter a valid email address.');
+    emailInp.focus();
+    return;
+  }
+
+  const btn  = document.getElementById(isResend ? 'resendBtn' : 'sendBtn');
+  const spin = document.getElementById('s1-spin');
+  if (!isResend) { btn.classList.add('loading'); btn.disabled = true; }
+  setBanner(isResend ? 2 : 1, '', '');
+
+  try {
+    const r = await fetch('/auth/send-otp', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email }),
+    });
+    const d = await r.json();
+
+    if (r.status === 429) {
+      const msg = d.error || 'Too many requests. Wait a moment.';
+      setBanner(isResend ? 2 : 1, 'err', msg);
+      if (d.wait && isResend) startCountdown(d.wait);
+      return;
+    }
+
+    if (!d.ok && !d.masked) {
+      setBanner(isResend ? 2 : 1, 'err', d.error || 'Could not send OTP. Try again.');
+      return;
+    }
+
+    // Success (or silent reject for unlisted email — same UX)
+    _email = email;
+    if (!isResend) {
+      document.getElementById('emailRecap').textContent = email;
+      showStep(2);
+      setTimeout(() => {
+        document.getElementById('d0').focus();
+        startCountdown(60);
+      }, 50);
+    } else {
+      setBanner(2, 'ok', 'New code sent! Check your inbox.');
+      clearOtpInputs();
+      document.getElementById('d0').focus();
+      startCountdown(60);
+    }
+
+  } catch(err) {
+    setBanner(isResend ? 2 : 1, 'err', 'Network error. Check your connection.');
+  } finally {
+    if (!isResend) { btn.classList.remove('loading'); btn.disabled = false; }
+  }
+}
+
+async function resendOtp() {
+  document.getElementById('resendBtn').disabled = true;
+  clearOtpInputs();
+  setBanner(2, '', '');
+  await sendOtp(true);
+}
+
+// ── Countdown timer (resend cooldown) ────────────────────────────────
+function startCountdown(secs) {
+  clearInterval(_countdownId);
+  const resendBtn  = document.getElementById('resendBtn');
+  const countdownEl = document.getElementById('countdown-text');
+  resendBtn.disabled = true;
+
+  function tick() {
+    if (secs <= 0) {
+      clearInterval(_countdownId);
+      countdownEl.textContent = '';
+      resendBtn.disabled = false;
+      return;
+    }
+    countdownEl.textContent = `Resend available in ${secs}s · `;
+    secs--;
+  }
+  tick();
+  _countdownId = setInterval(tick, 1000);
+}
+
+// ── OTP digit input wiring ────────────────────────────────────────────
+const digits = [0,1,2,3,4,5].map(i => document.getElementById('d'+i));
+
+digits.forEach((inp, i) => {
+  inp.addEventListener('input', e => {
+    const v = e.target.value.replace(/\D/g,'');
+    e.target.value = v ? v[v.length-1] : '';
+    inp.classList.toggle('filled', !!e.target.value);
+    inp.classList.remove('err');
+    if (e.target.value && i < 5) digits[i+1].focus();
+    if (getOtp().length === 6) autoVerify();
+  });
+
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && !e.target.value && i > 0) {
+      digits[i-1].value = '';
+      digits[i-1].classList.remove('filled');
+      digits[i-1].focus();
+    }
+    if (e.key === 'Enter') verifyOtp();
+  });
+
+  // Handle paste on any digit
+  inp.addEventListener('paste', e => {
+    e.preventDefault();
+    const pasted = (e.clipboardData.getData('text') || '').replace(/\D/g,'').slice(0,6);
+    if (!pasted) return;
+    pasted.split('').forEach((ch, j) => {
+      if (digits[j]) { digits[j].value = ch; digits[j].classList.add('filled'); }
+    });
+    if (pasted.length === 6) { digits[5].focus(); autoVerify(); }
+    else digits[Math.min(pasted.length, 5)].focus();
+  });
+});
+
+function getOtp() { return digits.map(d => d.value).join(''); }
+
+function clearOtpInputs() {
+  digits.forEach(d => { d.value = ''; d.classList.remove('filled','err'); });
+}
+
+function shakeOtp() {
+  digits.forEach(d => { d.classList.remove('err'); void d.offsetWidth; d.classList.add('err'); });
+}
+
+let _autoVerifyPending = false;
+function autoVerify() {
+  if (_autoVerifyPending) return;
+  _autoVerifyPending = true;
+  setTimeout(() => { _autoVerifyPending = false; verifyOtp(); }, 120);
+}
+
+// ── Step 2 — Verify OTP ──────────────────────────────────────────────
+async function verifyOtp() {
+  const otp      = getOtp();
+  const remember = document.getElementById('rememberChk').checked;
+
+  if (otp.length < 6) {
+    setBanner(2, 'err', 'Enter all 6 digits of your verification code.');
+    digits[otp.length]?.focus();
+    return;
+  }
+
+  const btn = document.getElementById('verifyBtn');
+  btn.classList.add('loading'); btn.disabled = true;
+  setBanner(2, '', '');
+
+  try {
+    const r = await fetch('/auth/verify-otp', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email: _email, otp, remember }),
+    });
+    const d = await r.json();
+
+    if (d.ok) {
+      // Success — brief flash then redirect
+      setBanner(2, 'ok', '✓ Verified! Loading your dashboard…');
+      btn.innerHTML = '<span class="btn-lbl">✓ Signed In</span>';
+      btn.style.background = '#00b894';
+      setTimeout(() => { window.location.href = '/'; }, 600);
+    } else {
+      setBanner(2, 'err', d.error || 'Verification failed. Try again.');
+      shakeOtp();
+      clearOtpInputs();
+      digits[0].focus();
+    }
+
+  } catch(err) {
+    setBanner(2, 'err', 'Network error. Check your connection.');
+    shakeOtp();
+  } finally {
+    if (!document.getElementById('verifyBtn').innerHTML.includes('Signed')) {
+      btn.classList.remove('loading'); btn.disabled = false;
+    }
+  }
+}
+
+// ── Checkbox visual ───────────────────────────────────────────────────
+document.getElementById('rememberChk').addEventListener('change', function() {
+  document.getElementById('checkmark').style.borderColor = this.checked ? 'var(--accent)' : '';
+});
+
+// ── Enter key on email field ──────────────────────────────────────────
+document.getElementById('emailInp').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendOtp();
+});
+
+// ── Candlestick decoration ────────────────────────────────────────────
+(function() {
+  const w = document.getElementById('candles');
+  const n = Math.floor(window.innerWidth / 12);
+  w.innerHTML = Array.from({length:n}, () => {
+    const up = Math.random() > 0.42;
+    const h  = Math.random() * 72 + 8;
+    const wk = Math.random() * 14 + 4;
+    const dl = (Math.random() * 2.5).toFixed(2);
+    return `<div class="candle ${up?'up':'dn'}" style="animation-delay:${dl}s">
+      <div class="cwick" style="height:${wk}px"></div>
+      <div class="cbody" style="height:${h}px"></div>
+    </div>`;
+  }).join('');
+})();
+
+// ── Ticker strip ──────────────────────────────────────────────────────
+(function() {
+  const items = [
+    {sym:'NIFTY 50', p:'24,148', c:'+0.43%', up:true},
+    {sym:'SENSEX',   p:'79,408', c:'+0.38%', up:true},
+    {sym:'TCS',      p:'₹3,842', c:'+1.8%',  up:true},
+    {sym:'INFY',     p:'₹1,423', c:'+2.1%',  up:true},
+    {sym:'RELIANCE', p:'₹2,715', c:'+0.9%',  up:true},
+    {sym:'HDFCBANK', p:'₹1,567', c:'-0.4%',  up:false},
+    {sym:'ZOMATO',   p:'₹218',   c:'+3.4%',  up:true},
+    {sym:'TATASTEEL',p:'₹142',   c:'+2.8%',  up:true},
+    {sym:'BAJFINANCE',p:'₹7,240',c:'+1.2%',  up:true},
+    {sym:'LT',       p:'₹3,580', c:'+0.6%',  up:true},
+    {sym:'WIPRO',    p:'₹524',   c:'-0.3%',  up:false},
+    {sym:'SUNPHARMA',p:'₹1,690', c:'-0.7%',  up:false},
+  ];
+  const all = [...items,...items]; // duplicate for loop
+  document.getElementById('ticker').innerHTML = all.map(s =>
+    `<div class="tick">
+      <span class="sym">${s.sym}</span>
+      <span>${s.p}</span>
+      <span class="${s.up?'up':'dn'}">${s.up?'▲':'▼'} ${s.c}</span>
+    </div>`
+  ).join('');
+})();
+</script>
+</body>
+</html>
