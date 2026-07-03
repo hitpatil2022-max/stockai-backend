@@ -164,6 +164,45 @@ def health():
         "files_visible":    all_files,
     }), 200
 
+
+@app.route('/test-email')
+def test_email():
+    import urllib.request, urllib.error, json as j2, base64
+    api_key    = os.environ.get('MAILJET_API_KEY', '')
+    secret_key = os.environ.get('MAILJET_SECRET_KEY', '')
+    smtp_email = os.environ.get('SMTP_EMAIL', '')
+    if not api_key or not secret_key:
+        return jsonify({
+            'error': 'Keys missing',
+            'MAILJET_API_KEY_set': bool(api_key),
+            'MAILJET_SECRET_KEY_set': bool(secret_key),
+        }), 400
+    creds = base64.b64encode(f'{api_key}:{secret_key}'.encode()).decode()
+    try:
+        req = urllib.request.Request(
+            'https://api.mailjet.com/v3/REST/apikey',
+            headers={'Authorization': f'Basic {creds}'}
+        )
+        with urllib.request.urlopen(req, timeout=10) as r:
+            data = j2.loads(r.read().decode())
+            return jsonify({
+                'status': 'CREDENTIALS_VALID',
+                'smtp_email': smtp_email,
+                'api_key_preview': api_key[:8] + '...',
+                'mailjet_data': data,
+            })
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        return jsonify({
+            'status': 'CREDENTIALS_INVALID',
+            'http_code': e.code,
+            'mailjet_error': body[:500],
+            'api_key_preview': api_key[:8] + '...' if api_key else 'NOT SET',
+            'smtp_email': smtp_email,
+        }), e.code
+    except Exception as e:
+        return jsonify({'status': 'ERROR', 'message': str(e)}), 500
+
 def run_flask():
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
