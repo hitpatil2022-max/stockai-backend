@@ -165,6 +165,45 @@ def health():
     }), 200
 
 
+
+@app.route('/test-send-otp')
+def test_send_otp():
+    import urllib.request, urllib.error, json as j2, base64
+    api_key    = os.environ.get('MAILJET_API_KEY', '')
+    secret_key = os.environ.get('MAILJET_SECRET_KEY', '')
+    smtp_email = os.environ.get('SMTP_EMAIL', '')
+    to_email   = smtp_email  # send test to self
+
+    payload = j2.dumps({
+        "Messages": [{
+            "From": {"Email": smtp_email, "Name": "India Stock AI Test"},
+            "To":   [{"Email": to_email}],
+            "Subject": "Test OTP Email - 123456",
+            "TextPart": "Your test OTP is: 123456",
+            "HTMLPart": "<h1>Test OTP: 123456</h1>",
+        }]
+    }).encode("utf-8")
+
+    creds = base64.b64encode(f"{api_key}:{secret_key}".encode()).decode()
+    try:
+        req = urllib.request.Request(
+            "https://api.mailjet.com/v3.1/send",
+            data    = payload,
+            headers = {
+                "Authorization": f"Basic {creds}",
+                "Content-Type":  "application/json",
+            },
+            method  = "POST",
+        )
+        with urllib.request.urlopen(req, timeout=15) as r:
+            result = j2.loads(r.read().decode())
+            return jsonify({"status": "EMAIL_SENT", "result": result})
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        return jsonify({"status": "FAILED", "http_code": e.code, "error": body}), e.code
+    except Exception as e:
+        return jsonify({"status": "ERROR", "message": str(e)}), 500
+
 @app.route('/test-email')
 def test_email():
     import urllib.request, urllib.error, json as j2, base64
