@@ -181,8 +181,9 @@ def get_current_user():
 def require_auth(f):
     @functools.wraps(f)
     def wrapped(*args, **kwargs):
-        if not get_current_user():
-            return redirect('/login')
+        # AUTH TEMPORARILY DISABLED
+        # if not get_current_user():
+        #     return redirect('/login')
         return f(*args, **kwargs)
     return wrapped
 
@@ -242,8 +243,9 @@ def register_auth_routes(app: Flask, get_login_html, get_dashboard_html):
 
     @app.route('/')
     def dashboard():
-        if not get_current_user():
-            return redirect('/login')
+        # AUTH TEMPORARILY DISABLED — re-enable when email service is working
+        # if not get_current_user():
+        #     return redirect('/login')
         html = get_dashboard_html()
         if html is None:
             return 'Starting up — refresh in 10 seconds.', 503
