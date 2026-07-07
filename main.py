@@ -420,13 +420,13 @@ def main():
 
     run_analysis()
 
-    mf_thread = threading.Thread(target=run_mf_discovery, daemon=True)
-    mf_thread.start()
+    # MF discovery runs daily at 10pm only — NOT on startup (prevents OOM on free tier)
+    # schedule.every().day.at("22:00").do(run_mf_discovery)
 
     schedule.every(30).minutes.do(run_analysis)
     schedule.every().day.at("03:30").do(morning_briefing)
     schedule.every().day.at("10:00").do(send_daily_summary)
-    schedule.every().day.at("22:00").do(run_mf_discovery)
+    schedule.every().day.at('22:00').do(run_mf_discovery)
 
     log("Scheduler running. Analysis every 30 minutes.")
 
