@@ -420,8 +420,12 @@ def main():
 
     run_analysis()
 
-    # MF discovery runs daily at 10pm only — NOT on startup (prevents OOM on free tier)
-    # schedule.every().day.at("22:00").do(run_mf_discovery)
+    # MF discovery: delayed 5 min after startup so Flask is stable first
+    # Saves each category progressively so frontend shows data as it arrives
+    def _delayed_mf():
+        time.sleep(300)  # wait 5 minutes
+        run_mf_discovery()
+    threading.Thread(target=_delayed_mf, daemon=True).start()
 
     schedule.every(30).minutes.do(run_analysis)
     schedule.every().day.at("03:30").do(morning_briefing)
