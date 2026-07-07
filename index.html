@@ -982,7 +982,7 @@ body {
           🔄 Refresh AI Picks
         </button>
         <div style="font-size:11px;color:#9ca3af;text-align:center;margin-bottom:12px;margin-top:4px">
-          Analysing 50 penny &amp; emerging stocks — refreshes automatically on load
+          Analysing 30 penny &amp; emerging stocks — refreshes automatically on load
         </div>
         <div id="suggestResults"></div>
       </div>
@@ -1929,9 +1929,17 @@ async function loadData() {
         if (isNaN(dt.getTime())) dt = new Date(ts.replace(' ', 'T') + 'Z');
       } catch(_) { dt = new Date(); }
       if (isNaN(dt.getTime())) throw new Error('bad date');
-      const _d = dt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' });
-      const _t = dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
-      document.getElementById('sbUpd').textContent = _d + ' · ' + _t + ' IST';
+      // Format date manually for cross-browser consistency
+      const _ist = new Date(dt.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      const _months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const _dd = String(_ist.getDate()).padStart(2,'0');
+      const _mm = _months[_ist.getMonth()];
+      const _yy = _ist.getFullYear();
+      let _hh = _ist.getHours();
+      const _min = String(_ist.getMinutes()).padStart(2,'0');
+      const _ampm = _hh >= 12 ? 'PM' : 'AM';
+      _hh = _hh % 12 || 12;
+      document.getElementById('sbUpd').textContent = `${_dd} ${_mm} ${_yy} · ${_hh}:${_min} ${_ampm} IST`;
     } catch (_) {
       document.getElementById('sbUpd').textContent = 'just now';
     }
@@ -2892,7 +2900,7 @@ async function callGeminiAPI(systemPrompt, userPrompt) {
     method: 'POST',
     headers: headers,
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(60000)
+    signal: AbortSignal.timeout(120000)
   });
 
   if (resp.status === 400) throw new Error('INVALID_KEY');
@@ -2916,6 +2924,9 @@ async function callGeminiAPI(systemPrompt, userPrompt) {
         </button>
       </div>`;
     }
+    // Re-enable main button so user can click it again
+    const _rb = document.getElementById('btnGetSuggestions');
+    if (_rb) { _rb.disabled = false; _rb.innerHTML = '🔄 Refresh AI Picks'; }
     throw new Error('rate_limited_handled');
   }
   if (!resp.ok) {
@@ -2972,12 +2983,12 @@ async function fetchAISuggestions() {
       <div style="text-align:center;padding:32px 16px;color:#7c3aed">
         <div class="spinner" style="width:28px;height:28px;border-width:3px;
              border-top-color:#7c3aed;margin:0 auto 14px"></div>
-        <div style="font-size:14px;font-weight:700">AI is analysing 50 stocks...</div>
+        <div style="font-size:14px;font-weight:700">AI is analysing 30 stocks...</div>
         <div style="font-size:12px;color:#9ca3af;margin-top:6px">
-          Scanning 50 stocks: Must Buy → Strong Buy → Watch → Risky
+          Scanning 30 stocks: Must Buy → Strong Buy → Watch → Risky
         </div>
         <div style="font-size:12px;color:#c4b5fd;margin-top:8px;font-family:'JetBrains Mono',monospace">
-          ⏱ ${_elapsed}s elapsed — 50 stocks takes 30–90s
+          ⏱ ${_elapsed}s elapsed — usually takes 20–50s
         </div>
         <div style="margin-top:14px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap">
           ${['PSU/Govt','Defence','EV/Green','Infra','Tech','SME'].map(t =>
@@ -2991,7 +3002,7 @@ async function fetchAISuggestions() {
     <div style="text-align:center;padding:32px 16px;color:#7c3aed">
       <div class="spinner" style="width:28px;height:28px;border-width:3px;
            border-top-color:#7c3aed;margin:0 auto 14px"></div>
-      <div style="font-size:14px;font-weight:700">AI is analysing 50 stocks...</div>
+      <div style="font-size:14px;font-weight:700">AI is analysing 30 stocks...</div>
       <div style="font-size:12px;color:#9ca3af;margin-top:6px">Scanning sectors &amp; themes...</div>
     </div>`;
 
@@ -3000,13 +3011,13 @@ async function fetchAISuggestions() {
 
 Date: ${today}
 
-TASK: Give your BEST 50 stock picks for Indian retail investors focused on penny stocks, emerging companies, and early-stage multi-baggers. Be BOLD and specific — your job is to find hidden gems.
+TASK: Give your BEST 30 stock picks for Indian retail investors focused on penny stocks, emerging companies, and early-stage multi-baggers. Be BOLD and specific — your job is to find hidden gems.
 
 MANDATORY DISTRIBUTION — you MUST include:
-- 5–8 stocks as MUST BUY (extremely high conviction, clear catalyst, undervalued NOW)
-- 15–20 stocks as STRONG BUY (solid upside, good fundamentals or strong order book)
-- 12–15 stocks as WATCH (good story, wait for better entry)
-- 8–10 stocks as RISKY (high risk high reward, only for aggressive investors)
+- 3–5 stocks as MUST BUY (extremely high conviction, clear catalyst, undervalued NOW)
+- 10–12 stocks as STRONG BUY (solid upside, good fundamentals or strong order book)
+- 8–10 stocks as WATCH (good story, wait for better entry)
+- 5–6 stocks as RISKY (high risk high reward, only for aggressive investors)
 
 THEMES TO COVER (at least 2 picks per theme):
 1. 🏛️ PSU/Govt: Railways (IRFC, RVNL, IRCON), Defence PSUs, Power sector
@@ -3019,7 +3030,7 @@ THEMES TO COVER (at least 2 picks per theme):
 
 For each stock focus on: recent order wins, Q3/Q4 FY25 earnings surprise, FII/DII buying, promoter activity, govt contract wins, sector tailwinds.
 
-Return EXACTLY 50 stocks as a pure JSON array. No markdown. No preamble. No trailing text. Schema:
+Return EXACTLY 30 stocks as a pure JSON array. No markdown. No preamble. No trailing text. Schema:
 
 [
   {
@@ -3069,10 +3080,25 @@ conviction and scores 1–10. risk score = higher means MORE risky. Be honest. B
 
   try {
     const sysPrompt = 'You are a JSON API. Output ONLY a valid JSON array. No markdown, no explanation, no preamble. Start with [ and end with ].';
-    const rawText = await callGeminiAPI(sysPrompt, prompt);
+    let rawText;
+    try {
+      rawText = await callGeminiAPI(sysPrompt, prompt);
+    } catch(apiErr) {
+      clearInterval(_timer);
+      if (apiErr.message === 'rate_limited_handled') return;
+      throw apiErr;
+    }
     clearInterval(_timer);
     const stocks = extractJSONArray(rawText);
-    if (!stocks || !stocks.length) throw new Error('No stock data returned — please try again');
+    if (!stocks || !stocks.length) {
+      // Show raw response so we can debug
+      el.innerHTML = `<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:14px 16px;color:#b91c1c">
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px">❌ Could not parse AI response</div>
+        <div style="font-size:11px;color:#666;margin-bottom:10px;word-break:break-all;max-height:80px;overflow:auto">${(rawText||'empty').slice(0,300)}</div>
+        <button onclick="fetchAISuggestions()" style="padding:7px 16px;background:#4285f4;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:13px">↺ Try Again</button>
+      </div>`;
+      return;
+    }
     _allSuggestions = stocks;
     renderSuggestionCards(stocks);
 
