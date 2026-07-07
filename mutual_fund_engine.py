@@ -401,17 +401,37 @@ def fetch_top_mutual_funds() -> dict:
     for cat_key, cat_info in SEBI_CATEGORIES.items():
         try:
             funds = discover_category_funds(session, cat_key, cat_info, all_schemes)
-            output['categories'].append({
+            cat_data = {
                 'key':   cat_key,
                 'label': cat_info['label'],
                 'icon':  cat_info['icon'],
                 'color': cat_info['color'],
                 'note':  cat_info['note'],
                 'funds': funds,
-            })
+            }
+            output['categories'].append(cat_data)
+
+            # ── Save progressively after each category ──────────────
+            # Frontend polls /data.json every 15s and renders as categories arrive
+            try:
+                import json as _json2
+                _data_path = './data.json'
+                existing = {}
+                try:
+                    with open(_data_path, 'r') as _f:
+                        existing = _json2.load(_f)
+                except Exception:
+                    pass
+                existing['mutual_funds'] = output
+                with open(_data_path, 'w') as _f:
+                    _json2.dump(existing, _f, indent=2, default=str)
+                log(f"  💾 Saved {cat_info['label']} to data.json ({len(output['categories'])} categories so far)")
+            except Exception as _e:
+                log(f"  ⚠️  Could not save progressively: {_e}")
+
             del funds        # release NAV data from memory
-            gc.collect()     # force GC — prevents OOM
-            time.sleep(2)    # longer pause between categories — reduces memory pressure on free tier
+            gc.collect()     # force GC between categories
+            time.sleep(2)    # pause — reduces memory pressure on free tier
         except Exception as e:
             log(f"  ❌ {cat_info['label']}: {e}")
 
