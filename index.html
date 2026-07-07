@@ -982,7 +982,7 @@ body {
           🔄 Refresh AI Picks
         </button>
         <div style="font-size:11px;color:#9ca3af;text-align:center;margin-bottom:12px;margin-top:4px">
-          Analysing 20 penny &amp; emerging stocks — refreshes automatically on load
+          Analysing 50 penny &amp; emerging stocks — refreshes automatically on load
         </div>
         <div id="suggestResults"></div>
       </div>
@@ -1921,7 +1921,14 @@ async function loadData() {
     // Timestamp
     try {
       const ts = data.last_updated || '';
-      const dt = new Date(ts.includes('+') || ts.endsWith('Z') ? ts : ts + 'Z');
+      // Handle IST timestamp formats: with +05:30, with Z, or plain ISO
+      let dt;
+      try {
+        dt = new Date(ts);
+        if (isNaN(dt.getTime())) dt = new Date(ts + 'Z');
+        if (isNaN(dt.getTime())) dt = new Date(ts.replace(' ', 'T') + 'Z');
+      } catch(_) { dt = new Date(); }
+      if (isNaN(dt.getTime())) throw new Error('bad date');
       const _d = dt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' });
       const _t = dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
       document.getElementById('sbUpd').textContent = _d + ' · ' + _t + ' IST';
@@ -2876,7 +2883,7 @@ async function callGeminiAPI(systemPrompt, userPrompt) {
     contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 8192,
+      maxOutputTokens: 16384,
       responseMimeType: 'application/json'
     }
   };
@@ -2893,37 +2900,21 @@ async function callGeminiAPI(systemPrompt, userPrompt) {
     // Show countdown timer in UI
     const sugEl = document.getElementById('suggestResults');
     if (sugEl) {
-      let secs = 60;
+      // Show manual refresh option — no auto-retry countdown
       sugEl.innerHTML = `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;
-        padding:18px 20px;text-align:center">
+        padding:24px 20px;text-align:center">
         <div style="font-size:28px;margin-bottom:8px">⏱️</div>
         <div style="font-size:15px;font-weight:800;color:#c2410c;margin-bottom:4px">Rate Limited</div>
-        <div style="font-size:13px;color:#92400e;margin-bottom:12px">Gemini free tier: 15 requests/min</div>
-        <div id="rlCountdown" style="font-size:36px;font-weight:900;color:#7c3aed;
-             font-family:'JetBrains Mono',monospace">60s</div>
-        <div style="font-size:11px;color:#9ca3af;margin-top:6px">Auto-retrying when ready...</div>
+        <div style="font-size:13px;color:#92400e;margin-bottom:6px">Gemini free tier: 15 requests/min</div>
+        <div style="font-size:12px;color:#78350f;margin-bottom:16px;line-height:1.6">
+          Too many requests sent at once.<br>Wait a minute then click refresh.
+        </div>
+        <button onclick="fetchAISuggestions()"
+          style="background:#7c3aed;color:#fff;border:none;border-radius:8px;
+                 padding:10px 24px;font-size:13px;font-weight:700;cursor:pointer">
+          🔄 Try Again Now
+        </button>
       </div>`;
-      const timer = setInterval(() => {
-        secs--;
-        const cd = document.getElementById('rlCountdown');
-        if (!isMarketOpen()) {
-          clearInterval(timer);
-          const _el = document.getElementById('suggestResults');
-          if (_el) _el.innerHTML = `
-            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;
-                        padding:24px;text-align:center">
-              <div style="font-size:28px;margin-bottom:8px">🌙</div>
-              <div style="font-size:14px;font-weight:700;color:#374151;margin-bottom:4px">Market Closed</div>
-              <div style="font-size:12px;color:#6b7280">AI picks refresh when market reopens at 9:15 AM IST</div>
-            </div>`;
-          return;
-        }
-        if (cd) cd.textContent = secs + 's';
-        if (secs <= 0) {
-          clearInterval(timer);
-          fetchAISuggestions();
-        }
-      }, 1000);
     }
     throw new Error('rate_limited_handled');
   }
@@ -2981,12 +2972,12 @@ async function fetchAISuggestions() {
       <div style="text-align:center;padding:32px 16px;color:#7c3aed">
         <div class="spinner" style="width:28px;height:28px;border-width:3px;
              border-top-color:#7c3aed;margin:0 auto 14px"></div>
-        <div style="font-size:14px;font-weight:700">AI is analysing 20 stocks...</div>
+        <div style="font-size:14px;font-weight:700">AI is analysing 50 stocks...</div>
         <div style="font-size:12px;color:#9ca3af;margin-top:6px">
-          Scanning: Must Buy → Strong Buy → Watch → Risky
+          Scanning 50 stocks: Must Buy → Strong Buy → Watch → Risky
         </div>
         <div style="font-size:12px;color:#c4b5fd;margin-top:8px;font-family:'JetBrains Mono',monospace">
-          ⏱ ${_elapsed}s elapsed — usually takes 15–40s
+          ⏱ ${_elapsed}s elapsed — 50 stocks takes 30–90s
         </div>
         <div style="margin-top:14px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap">
           ${['PSU/Govt','Defence','EV/Green','Infra','Tech','SME'].map(t =>
@@ -3000,7 +2991,7 @@ async function fetchAISuggestions() {
     <div style="text-align:center;padding:32px 16px;color:#7c3aed">
       <div class="spinner" style="width:28px;height:28px;border-width:3px;
            border-top-color:#7c3aed;margin:0 auto 14px"></div>
-      <div style="font-size:14px;font-weight:700">AI is analysing 20 stocks...</div>
+      <div style="font-size:14px;font-weight:700">AI is analysing 50 stocks...</div>
       <div style="font-size:12px;color:#9ca3af;margin-top:6px">Scanning sectors &amp; themes...</div>
     </div>`;
 
@@ -3009,13 +3000,13 @@ async function fetchAISuggestions() {
 
 Date: ${today}
 
-TASK: Give your BEST 20 stock picks for Indian retail investors focused on penny stocks, emerging companies, and early-stage multi-baggers. Be BOLD and specific — your job is to find hidden gems.
+TASK: Give your BEST 50 stock picks for Indian retail investors focused on penny stocks, emerging companies, and early-stage multi-baggers. Be BOLD and specific — your job is to find hidden gems.
 
 MANDATORY DISTRIBUTION — you MUST include:
-- 2–3 stocks as MUST BUY (extremely high conviction, clear catalyst, undervalued NOW)
-- 6–8 stocks as STRONG BUY (solid upside, good fundamentals or strong order book)
-- 5–6 stocks as WATCH (good story, wait for better entry)
-- 3–4 stocks as RISKY (high risk high reward, only for aggressive investors)
+- 5–8 stocks as MUST BUY (extremely high conviction, clear catalyst, undervalued NOW)
+- 15–20 stocks as STRONG BUY (solid upside, good fundamentals or strong order book)
+- 12–15 stocks as WATCH (good story, wait for better entry)
+- 8–10 stocks as RISKY (high risk high reward, only for aggressive investors)
 
 THEMES TO COVER (at least 2 picks per theme):
 1. 🏛️ PSU/Govt: Railways (IRFC, RVNL, IRCON), Defence PSUs, Power sector
@@ -3028,7 +3019,7 @@ THEMES TO COVER (at least 2 picks per theme):
 
 For each stock focus on: recent order wins, Q3/Q4 FY25 earnings surprise, FII/DII buying, promoter activity, govt contract wins, sector tailwinds.
 
-Return EXACTLY 20 stocks as a pure JSON array. No markdown. No preamble. No trailing text. Schema:
+Return EXACTLY 50 stocks as a pure JSON array. No markdown. No preamble. No trailing text. Schema:
 
 [
   {
