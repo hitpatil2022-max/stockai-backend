@@ -2867,14 +2867,9 @@ async function callGeminiAPI(systemPrompt, userPrompt) {
   const key = getApiKey();
   if (!key) throw new Error('NO_KEY');
 
-  // Support both old AIzaSy keys (v1beta + ?key=) and new AQ. keys (v1 + Bearer)
-  const isNewKeyFormat = key.startsWith('AQ.');
-  const url = isNewKeyFormat
-    ? 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent'
-    : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
-
+  // Both AIzaSy and AQ. keys use v1beta endpoint with ?key= parameter
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
   const headers = { 'Content-Type': 'application/json' };
-  if (isNewKeyFormat) headers['Authorization'] = `Bearer ${key}`;
 
   const body = {
     system_instruction: { parts: [{ text: systemPrompt }] },
