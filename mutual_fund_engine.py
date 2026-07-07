@@ -45,7 +45,7 @@ SEBI_CATEGORIES = {
 }
 
 # How many candidate funds to evaluate per category before picking top 5
-CANDIDATES_PER_CAT = 25
+CANDIDATES_PER_CAT = 12
 TOP_N = 5
 
 # Composite score weights
@@ -257,7 +257,7 @@ def discover_category_funds(
             'nav_count':     len(nav_data),
         }
 
-    with ThreadPoolExecutor(max_workers=6) as ex:
+    with ThreadPoolExecutor(max_workers=3) as ex:
         futures = {ex.submit(process_scheme, s): s for s in candidates}
         for future in as_completed(futures):
             try:
@@ -356,7 +356,7 @@ def discover_hidden_gems(
                                 f"{'Exceptional early momentum' if ret_since_launch > 30 else 'Strong early momentum' if ret_since_launch > 15 else 'Steady growth since launch'}"),
         }
 
-    with ThreadPoolExecutor(max_workers=8) as ex:
+    with ThreadPoolExecutor(max_workers=3) as ex:
         futures = {ex.submit(check_gem, s): s for s in sample}
         for future in as_completed(futures):
             try:
@@ -410,8 +410,8 @@ def fetch_top_mutual_funds() -> dict:
                 'funds': funds,
             })
             del funds        # release NAV data from memory
-            gc.collect()     # force GC — prevents OOM on Railway
-            time.sleep(0.5)  # between categories
+            gc.collect()     # force GC — prevents OOM
+            time.sleep(2)    # longer pause between categories — reduces memory pressure on free tier
         except Exception as e:
             log(f"  ❌ {cat_info['label']}: {e}")
 
