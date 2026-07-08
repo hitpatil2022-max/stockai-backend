@@ -663,7 +663,10 @@ body {
       <span class="mkt-dot"></span>
       <span id="mktText">MARKET CLOSED</span>
     </div>
-    <div class="clock" id="clockEl">--:--:-- IST</div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:1px">
+      <div class="clock" id="clockEl">--:--:-- IST</div>
+      <div id="dateEl" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#93c5fd;font-weight:600;letter-spacing:0.5px;white-space:nowrap">-- --- ----</div>
+    </div>
     <button class="btn-refresh" id="refreshBtn" onclick="doRefresh()">↺ Refresh</button>
   </div>
 </div>
@@ -1151,6 +1154,10 @@ function tickClock() {
   const ist  = getIST();
   document.getElementById('clockEl').textContent =
     ist.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' IST';
+  // Update date display
+  const _mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const _dateEl = document.getElementById('dateEl');
+  if (_dateEl) _dateEl.textContent = `${String(ist.getDate()).padStart(2,'0')} ${_mon[ist.getMonth()]} ${ist.getFullYear()}`;
 
   const open = isMarketOpen();
   const pre  = isPreMarket();
@@ -1921,13 +1928,12 @@ async function loadData() {
     // Timestamp
     try {
       const ts = data.last_updated || '';
-      // Strip nanoseconds → JS Date only handles 3 decimal places (milliseconds)
-      // Backend sends 9 decimal places e.g. 2026-07-08T18:25:42.347215919+05:30
-      const _tsClean = ts.replace(/(\d{2}:\d{2}:\d{2}\.\d{3})\d+/, '$1');
-      let dt = new Date(_tsClean);
-      if (isNaN(dt.getTime())) dt = new Date(_tsClean.replace(' ','T')+'Z');
+      // Strip nanoseconds — JS Date only handles 3 decimal places
+      const _tsC = ts.replace(/(\d{2}:\d{2}:\d{2}\.\d{3})\d+/, '$1');
+      let dt = new Date(_tsC);
+      if (isNaN(dt.getTime())) dt = new Date(_tsC.replace(' ','T')+'Z');
       if (isNaN(dt.getTime())) dt = new Date();
-      // Add 5h30m to get IST, read UTC fields for reliable cross-browser date
+      // Add 5h30m offset to get IST, use UTC getters for cross-browser reliability
       const _ist = new Date(dt.getTime() + 19800000);
       const _mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       const _dd  = String(_ist.getUTCDate()).padStart(2,'0');
@@ -2577,6 +2583,23 @@ function renderMFFromBackend(mfData) {
 function renderMFLoading(msg) {
   const el = document.getElementById('panelMF');
   if (!el) return;
+
+  // Poll /data.json every 10 seconds for progressive MF data
+  if (!window._mfPollId) {
+    window._mfPollId = setInterval(async () => {
+      try {
+        const r = await fetch('/data.json?t=' + Date.now());
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d.mutual_funds && d.mutual_funds.categories && d.mutual_funds.categories.length > 0) {
+          window._mfDataCache = d.mutual_funds;
+          clearInterval(window._mfPollId);
+          window._mfPollId = null;
+          renderMFFromBackend(d.mutual_funds);
+        }
+      } catch(e) {}
+    }, 10000);
+  }
 
   const CAT_COLORS = ['#1d4ed8','#7c3aed','#16a34a','#0891b2','#dc2626','#ea580c','#374151','#9333ea'];
   const CAT_LABELS = ['Large Cap','Mid Cap','Small Cap','Flexi Cap','ELSS','Hybrid','Index','Sectoral'];
