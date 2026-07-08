@@ -1929,14 +1929,14 @@ async function loadData() {
         if (isNaN(dt.getTime())) dt = new Date(ts.replace(' ', 'T') + 'Z');
       } catch(_) { dt = new Date(); }
       if (isNaN(dt.getTime())) throw new Error('bad date');
-      // Format date manually for cross-browser consistency
-      const _ist = new Date(dt.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      // Convert to IST by adding 5h30m offset
       const _months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      const _dd = String(_ist.getDate()).padStart(2,'0');
-      const _mm = _months[_ist.getMonth()];
-      const _yy = _ist.getFullYear();
-      let _hh = _ist.getHours();
-      const _min = String(_ist.getMinutes()).padStart(2,'0');
+      const _ist = new Date(dt.getTime() + (5.5 * 60 * 60 * 1000));
+      const _dd  = String(_ist.getUTCDate()).padStart(2,'0');
+      const _mm  = _months[_ist.getUTCMonth()];
+      const _yy  = _ist.getUTCFullYear();
+      let   _hh  = _ist.getUTCHours();
+      const _min = String(_ist.getUTCMinutes()).padStart(2,'0');
       const _ampm = _hh >= 12 ? 'PM' : 'AM';
       _hh = _hh % 12 || 12;
       document.getElementById('sbUpd').textContent = `${_dd} ${_mm} ${_yy} · ${_hh}:${_min} ${_ampm} IST`;
@@ -1945,7 +1945,7 @@ async function loadData() {
     }
 
     // Status bar
-    document.getElementById('sbStocks').textContent = data.stocks_analyzed || '—';
+    document.getElementById('sbStocks').textContent = (data.stocks_analyzed !== undefined && data.stocks_analyzed !== null) ? data.stocks_analyzed : '—';
     const sigs0 = data.signals || [];
     const aiOn    = sigs0.some(s => s.ai_powered === true);
     const quotaOut = data.quota_exhausted === true;
@@ -3415,7 +3415,7 @@ setTimeout(() => {
     const el = document.getElementById('suggestResults');
     if (el) el.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:#92400e">Set GEMINI_API_KEY in index.html to enable AI picks.</div>';
   }
-}, 30000);  // 30 second delay
+}, 180000);  // 3 minute delay — gives backend time to finish Gemini analysis first
 setInterval(loadData,    5  * 60 * 1000);   // signals every 5 min
 setInterval(fetchLiveIndices, 5  * 60 * 1000);   // live indices every 5 min
 setInterval(fetchMetals, 30 * 60 * 1000);   // metals every 30 min
