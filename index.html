@@ -3406,6 +3406,8 @@ fetchLiveIndices();
 fetchMetals();
 loadData();
 // Auto-load penny picks on startup (key is hardcoded — no modal needed)
+// Delay penny scanner 30s after page load so it doesn't clash with backend Gemini calls
+// Backend analysis runs at startup and uses the same Gemini quota
 setTimeout(() => {
   if (getApiKey() && getApiKey() !== 'YOUR_GEMINI_KEY_HERE') {
     fetchAISuggestions();
@@ -3413,7 +3415,7 @@ setTimeout(() => {
     const el = document.getElementById('suggestResults');
     if (el) el.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:#92400e">Set GEMINI_API_KEY in index.html to enable AI picks.</div>';
   }
-}, 1500);
+}, 30000);  // 30 second delay
 setInterval(loadData,    5  * 60 * 1000);   // signals every 5 min
 setInterval(fetchLiveIndices, 5  * 60 * 1000);   // live indices every 5 min
 setInterval(fetchMetals, 30 * 60 * 1000);   // metals every 30 min
