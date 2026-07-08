@@ -204,8 +204,6 @@ def analyze_with_ai(news_items, stock_data, tech_signals):
 
         if status_code == 429 or any(k in err_body for k in ["quota", "resource_exhausted", "rate"]):
             # Gemini free tier resets at midnight Pacific = 1:30 PM IST next day
-            from datetime import datetime, timezone, timedelta
-            import pytz
             ist = pytz.timezone("Asia/Kolkata")
             now_ist = datetime.now(ist)
             # Next midnight Pacific = next midnight UTC-8
