@@ -4,14 +4,14 @@ Analyses news + technical + fundamental data for intelligent stock insights.
 Now includes: business quality, competitive moat, sector outlook, chart pattern context.
 """
 
-from google import genai
-from google.genai import types
 import json
+import requests
 import pytz
 from datetime import datetime, timezone, timedelta
 from config import GEMINI_API_KEY
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+# REST API works with both AIzaSy and new AQ. key formats
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_API_KEY
 
 ANALYSIS_PROMPT = """
 You are a senior Indian equity research analyst at a top-tier institution (like Motilal Oswal or Kotak Securities).
@@ -159,16 +159,19 @@ def analyze_with_ai(news_items, stock_data, tech_signals):
     )
 
     try:
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.25,        # lower = more consistent, less hallucination
-                max_output_tokens=3000,
-            )
+        api_resp = requests.post(
+            GEMINI_URL,
+            json={
+                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                "generationConfig": {
+                    "temperature": 0.25,
+                    "maxOutputTokens": 3000,
+                }
+            },
+            timeout=60,
         )
-
-        raw = response.text.strip()
+        api_resp.raise_for_status()
+        raw = api_resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
 
         # Strip markdown fences if model adds them
         if raw.startswith("```"):
@@ -193,14 +196,16 @@ def analyze_with_ai(news_items, stock_data, tech_signals):
         return {"stocks": [], "market_sentiment": "neutral",
                 "market_summary": "Running on technical signals — AI analysis will resume shortly.",
                 "ai_powered": False}
-    except Exception as e:
+    except requests.exceptions.HTTPError as e:
         err_str = str(e).lower()
+        status_code = e.response.status_code if e.response else 0
+        err_body = e.response.text.lower() if e.response else ''
         print(f"   ⚠️ Gemini API error: {e}")
 
-        # Quota / rate limit — daily free tier exhausted
-        if any(k in err_str for k in ["quota", "resource_exhausted", "resourceexhausted",
-                                       "429", "rate", "limit"]):
+        if status_code == 429 or any(k in err_body for k in ["quota", "resource_exhausted", "rate"]):
             # Gemini free tier resets at midnight Pacific = 1:30 PM IST next day
+            from datetime import datetime, timezone, timedelta
+            import pytz
             ist = pytz.timezone("Asia/Kolkata")
             now_ist = datetime.now(ist)
             # Next midnight Pacific = next midnight UTC-8
@@ -220,6 +225,12 @@ def analyze_with_ai(news_items, stock_data, tech_signals):
                 "quota_exhausted": True,
             }
 
+        return {"stocks": [], "market_sentiment": "neutral",
+                "market_summary": "Running on technical signals only.",
+                "ai_powered": False}
+
+    except Exception as e:
+        print(f"   ⚠️ Gemini unexpected error: {e}")
         return {"stocks": [], "market_sentiment": "neutral",
                 "market_summary": "Running on technical signals only.",
                 "ai_powered": False}
