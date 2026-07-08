@@ -1921,8 +1921,12 @@ async function loadData() {
     // Timestamp
     try {
       const ts = data.last_updated || '';
-      let dt = new Date(ts);
-      if (isNaN(dt)) dt = new Date(ts.replace(' ','T')+'Z');
+      // Strip nanoseconds → JS Date only handles 3 decimal places (milliseconds)
+      // Backend sends 9 decimal places e.g. 2026-07-08T18:25:42.347215919+05:30
+      const _tsClean = ts.replace(/(\d{2}:\d{2}:\d{2}\.\d{3})\d+/, '$1');
+      let dt = new Date(_tsClean);
+      if (isNaN(dt.getTime())) dt = new Date(_tsClean.replace(' ','T')+'Z');
+      if (isNaN(dt.getTime())) dt = new Date();
       // Add 5h30m to get IST, read UTC fields for reliable cross-browser date
       const _ist = new Date(dt.getTime() + 19800000);
       const _mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
