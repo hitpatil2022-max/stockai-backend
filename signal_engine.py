@@ -72,7 +72,8 @@ def generate_signals(ai_insights, tech_signals, stock_data):
                 action = "HOLD"
 
         # ── Threshold filter ────────────────────────────────────────────────
-        threshold = ALERT_CONFIDENCE_THRESHOLD if ai_available else TECH_ONLY_THRESHOLD
+        # AI mode: 70% | Technical-only mode: 57%
+        threshold = 70 if ai_available else 57
         if combined_confidence < threshold:
             continue
 
@@ -118,6 +119,74 @@ def generate_signals(ai_insights, tech_signals, stock_data):
             "is_strong":   combined_confidence >= ALERT_CONFIDENCE_THRESHOLD,
         }
         final_signals.append(signal)
+
+    # ── Expand if fewer than 7 BUY/WATCH signals found ─────────────────
+    MIN_SIGNALS = 7
+    buy_watch_count = sum(1 for s in final_signals
+                          if not s.get('is_market_summary') and
+                          s.get('action') in ('BUY','WATCH'))
+
+    if buy_watch_count < MIN_SIGNALS:
+        # Lower threshold and retry with ALL remaining stocks
+        lower_threshold = 60 if ai_available else 50
+        for symbol_full, tech in tech_signals.items():
+            symbol = symbol_full.replace(".NS","").replace("^","")
+            # Skip already added signals
+            if any(s.get('symbol') == symbol for s in final_signals):
+                continue
+            stock     = stock_data.get(symbol_full, {})
+            ai        = ai_stocks.get(symbol)
+            tech_score = tech.get("technical_score", 50)
+
+            if ai:
+                score = round((ai["confidence"] * 0.6) + (tech_score * 0.4))
+            else:
+                score = min(85, tech_score)
+
+            if score < lower_threshold:
+                continue
+
+            action = ai["action"] if ai else (
+                "BUY"   if tech_score >= 70 else
+                "WATCH" if tech_score >= 58 else
+                "HOLD"
+            )
+            if action not in ("BUY","WATCH"):
+                continue
+
+            reason = ai.get("reason","") if ai else (
+                f"Technical: RSI={tech.get('rsi','?')} "
+                f"MACD={tech.get('macd',{}).get('trend','?')} "
+                f"Score={tech_score}/100"
+            )
+            final_signals.append({
+                "symbol":        symbol,
+                "full_symbol":   symbol_full,
+                "name":          stock.get("name", symbol),
+                "current_price": stock.get("current_price", 0),
+                "change_pct":    stock.get("change_pct", 0),
+                "action":        action,
+                "confidence":    score,
+                "time_horizon":  ai.get("time_horizon","swing") if ai else "swing",
+                "target_price":  ai.get("target_price") if ai else calculate_target(stock, tech, action),
+                "stop_loss":     ai.get("stop_loss") if ai else calculate_stop_loss(stock, tech, action),
+                "risk_level":    ai.get("risk_level","MEDIUM") if ai else assess_risk(tech),
+                "reason":        reason,
+                "impact_factors": ai.get("impact_factors",[]) if ai else [],
+                "signal_sources": ["technical"],
+                "technical": {
+                    "rsi":             tech.get("rsi"),
+                    "rsi_signal":      tech.get("rsi_signal"),
+                    "macd_trend":      tech.get("macd",{}).get("trend"),
+                    "volume_spike":    tech.get("volume_spike"),
+                    "technical_score": tech_score,
+                    "trend":           tech.get("trend"),
+                },
+                "ai_powered":   bool(ai),
+                "timestamp":    datetime.now().isoformat(),
+                "is_strong":    False,
+                "expanded":     True,  # flag — added via expansion
+            })
 
     # Sort by confidence
     final_signals.sort(key=lambda x: x["confidence"], reverse=True)
