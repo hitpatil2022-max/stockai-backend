@@ -866,6 +866,53 @@ body {
 
     </div><!-- end paneEquity -->
 
+    <div class="sec-title blue">🌍 FII / DII Flow</div>
+    <div class="rpanel-section" id="panelFii" style="background:#fff;border:1px solid #dbeafe;border-radius:8px;margin-bottom:4px">
+      <div class="fii-row">
+        <div><div class="fii-label">🌍 FII / FPI</div><div class="fii-sub">BUYING</div></div>
+        <div class="fii-val up">▲ ₹1,240 Cr</div>
+      </div>
+      <div class="fii-row">
+        <div><div class="fii-label">🏠 DII</div><div class="fii-sub">BUYING</div></div>
+        <div class="fii-val up">▲ ₹860 Cr</div>
+      </div>
+      <div class="flow-box bull">
+        <div class="flow-lbl">Overall Market Flow</div>
+        <div class="flow-val">BULLISH</div>
+      </div>
+    </div>
+
+    <div class="sec-title red">🔴 SELL Signals — Portfolio Only <span class="sec-badge r" id="bdgSell">0</span></div>
+    <div id="listSell">
+      <div class="info-notice">
+        <span class="ni">💼</span>
+        Add stocks to your portfolio above to see SELL alerts here
+      </div>
+    </div>
+
+    <div class="sec-title amber">🟡 HOLD Signals — Portfolio Only <span class="sec-badge a" id="bdgHold">0</span></div>
+    <div id="listHold">
+      <div class="info-notice">
+        <span class="ni">💼</span>
+        Add stocks to your portfolio above to see HOLD alerts here
+      </div>
+    </div>
+
+    <!-- ══ MUTUAL FUNDS TAB ══ -->
+    <div id="paneMF" style="display:none">
+
+      <!-- ── Top Funds by Category ── -->
+      <div id="panelMF" style="background:#f0f2f5;padding:0 0 4px;">
+      </div>
+
+      <!-- ── Hidden Gems Section ── -->
+      <div id="panelHiddenGems" style="background:#f0f2f5;padding:0 0 8px;margin-top:2px">
+      </div>
+
+    </div><!-- end paneMF -->
+
+    <!-- ══ MY PORTFOLIO ══ -->
+    <div style="margin:0">
     <div class="portfolio-big">
       <div class="port-big-header">
         <div class="port-big-title">💼 My Portfolio — P&amp;L Tracker</div>
@@ -1003,55 +1050,12 @@ body {
       </div>
     </div>
 
-    <div class="sec-title red">🔴 SELL Signals — Portfolio Only <span class="sec-badge r" id="bdgSell">0</span></div>
-    <div id="listSell">
-      <div class="info-notice">
-        <span class="ni">💼</span>
-        Add stocks to your portfolio above to see SELL alerts here
-      </div>
-    </div>
-
-    <div class="sec-title amber">🟡 HOLD Signals — Portfolio Only <span class="sec-badge a" id="bdgHold">0</span></div>
-    <div id="listHold">
-      <div class="info-notice">
-        <span class="ni">💼</span>
-        Add stocks to your portfolio above to see HOLD alerts here
-      </div>
-    </div>
-
-    <!-- ══ MUTUAL FUNDS TAB ══ -->
-    <div id="paneMF" style="display:none">
-
-      <!-- ── Top Funds by Category ── -->
-      <div id="panelMF" style="background:#f0f2f5;padding:0 0 4px;">
-      </div>
-
-      <!-- ── Hidden Gems Section ── -->
-      <div id="panelHiddenGems" style="background:#f0f2f5;padding:0 0 8px;margin-top:2px">
-      </div>
-
-    </div><!-- end paneMF -->
+  </div>
 
   </div>
 
   <!-- ══ RIGHT COLUMN ═════════════════════════════════════ -->
   <div class="col-right">
-
-    <div class="sec-title blue">🌍 FII / DII Flow</div>
-    <div class="rpanel-section" id="panelFii">
-      <div class="fii-row">
-        <div><div class="fii-label">🌍 FII / FPI</div><div class="fii-sub">BUYING</div></div>
-        <div class="fii-val up">▲ ₹1,240 Cr</div>
-      </div>
-      <div class="fii-row">
-        <div><div class="fii-label">🏠 DII</div><div class="fii-sub">BUYING</div></div>
-        <div class="fii-val up">▲ ₹860 Cr</div>
-      </div>
-      <div class="flow-box bull">
-        <div class="flow-lbl">Overall Market Flow</div>
-        <div class="flow-val">BULLISH</div>
-      </div>
-    </div>
 
     <div class="sec-title blue">🐋 Bulk Deals Today</div>
     <div class="rpanel-section" id="panelBulk">
@@ -1060,12 +1064,18 @@ body {
       <div class="deal-row"><div class="deal-top"><span class="deal-sym">HDFCBANK</span><span class="deal-sell">SELL</span></div><div class="deal-client">Morgan Stanley Asia Singapore</div></div>
     </div>
 
+    </div><!-- end portfolio -->
+
+
+  <!-- ══ MY PORTFOLIO SECTION ══ ═══════════════════════════════ -->
+  <div style="margin:0;padding:0">
     <div class="sec-title red">⚠️ Risks to Watch</div>
     <div class="rpanel-section" id="panelRisks">
       <div class="risk-row"><span class="risk-ico">⚠</span><span>Global slowdown fears may weigh on IT deal closures in H2</span></div>
       <div class="risk-row"><span class="risk-ico">⚠</span><span>Crude oil above $85 — watch ONGC, BPCL, IOC</span></div>
       <div class="risk-row"><span class="risk-ico">⚠</span><span>INR depreciation risk if FII outflows resume post Fed meeting</span></div>
     </div>
+
 
     <div class="sec-title" style="border-left-color:#f59e0b;color:#78350f">🥇 Gold &amp; Silver — Pune (IBJA)</div>
     <div class="rpanel-section" id="panelMetals">
@@ -2037,8 +2047,9 @@ async function loadData() {
     if (bulk.length > 0) renderBulk(bulk);
 
     // Risks — only update if market summary exists with risks
-    if (mkt && (mkt.risks || mkt.risks_to_watch || []).length > 0) {
-      renderRisks(mkt.risks || mkt.risks_to_watch);
+    const _risks = (mkt && (mkt.risks_to_watch || mkt.risks || [])) || [];
+    if (_risks.length > 0) {
+      renderRisks(_risks);
     }
 
   } catch (err) {
@@ -2252,55 +2263,61 @@ async function fetchMetals() {
     const gPrices = genPrices(gPer10g);
     const sPrices = genPrices(sPerKg);
 
-    function miniChart(prices, dates, color, hlColor, unit) {
-      const min = Math.min(...prices);
-      const max = Math.max(...prices);
-      const range = max - min || 1;
-      const fmt = n => n >= 100000 ? (n/100000).toFixed(2)+'L' : Math.round(n).toLocaleString('en-IN');
-      const chg = prices[prices.length-1] - prices[0];
-      const chgPct = (chg / prices[0] * 100).toFixed(2);
+    function miniTable(prices, dates, color, hlColor, unit, isSilver) {
+      const fmt  = n => '₹' + Math.round(n).toLocaleString('en-IN');
+      const chg  = prices[prices.length-1] - prices[0];
+      const chgP = (chg / prices[0] * 100).toFixed(2);
       const isUp = chg >= 0;
-
-      const bars = prices.map((p, i) => {
+      const rows = prices.map((p, i) => {
         const isToday = i === prices.length - 1;
-        const h = Math.round(((p - min) / range) * 55 + 12);
+        const prev    = i > 0 ? prices[i-1] : p;
+        const dayChg  = p - prev;
+        const dayPct  = i > 0 ? (dayChg/prev*100).toFixed(2) : '0.00';
+        const dayUp   = dayChg >= 0;
         const dd = String(dates[i].getDate()).padStart(2,'0');
         const mm = MON[dates[i].getMonth()];
-        return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;cursor:default"
-                     title="${dd} ${mm}: ₹${Math.round(p).toLocaleString('en-IN')}">
-          <div style="font-size:8px;color:${isToday?hlColor:'#9ca3af'};font-family:'JetBrains Mono',monospace;
-                      font-weight:${isToday?800:400};line-height:1">${isToday?'₹'+fmt(p):''}</div>
-          <div style="height:${h}px;width:100%;background:${isToday?hlColor:color};
-                      border-radius:2px 2px 0 0;opacity:${isToday?1:0.55};transition:opacity .2s"
-               onmouseover="this.style.opacity=1;this.nextSibling.nextSibling.style.display='block'"
-               onmouseout="this.style.opacity=${isToday?1:0.55};this.nextSibling.nextSibling.style.display='none'"></div>
-          <div style="font-size:7.5px;color:#9ca3af;white-space:nowrap">${dd}${isToday?' ★':''}</div>
-          <div style="display:none;position:absolute;background:#1e293b;color:#fff;font-size:10px;
-                      padding:3px 7px;border-radius:5px;font-family:'JetBrains Mono',monospace;
-                      pointer-events:none;z-index:100;white-space:nowrap">
-            ${dd} ${mm}: ₹${Math.round(p).toLocaleString('en-IN')}
-          </div>
-        </div>`;
+        return `<tr style="background:${isToday ? (isSilver?'#f1f5f9':'#fffbeb') : 'transparent'};
+                            font-weight:${isToday?700:400}">
+          <td style="padding:4px 8px;font-size:11px;color:${isToday?hlColor:'#374151'};
+                     font-family:'JetBrains Mono',monospace;white-space:nowrap">
+            ${dd} ${mm}${isToday?' ⭐':''}
+          </td>
+          <td style="padding:4px 8px;font-size:11px;text-align:right;
+                     font-family:'JetBrains Mono',monospace;color:${isToday?hlColor:'#111827'};
+                     font-weight:${isToday?700:500}">${fmt(p)}</td>
+          <td style="padding:4px 8px;font-size:11px;text-align:right;
+                     font-family:'JetBrains Mono',monospace;
+                     color:${i===0?'#9ca3af':dayUp?'#16a34a':'#dc2626'}">
+            ${i===0?'—':(dayUp?'▲':'▼')+' '+Math.abs(dayPct)+'%'}
+          </td>
+        </tr>`;
       }).join('');
 
       return `<div style="margin-top:10px;border:1.5px solid ${color};border-radius:10px;overflow:hidden">
         <div style="display:flex;justify-content:space-between;align-items:center;
-                    padding:8px 12px;background:${color}22">
-          <div style="font-size:11px;font-weight:800;color:${hlColor};text-transform:uppercase;letter-spacing:0.5px">
-            10-Day Trend · ${unit}
-          </div>
-          <div style="font-size:12px;font-weight:800;color:${isUp?'#16a34a':'#dc2626'};font-family:'JetBrains Mono',monospace">
-            ${isUp?'▲':'▼'} ${Math.abs(chgPct)}%
+                    padding:7px 12px;background:${color}33">
+          <div style="font-size:11px;font-weight:800;color:${hlColor};
+                      text-transform:uppercase;letter-spacing:0.5px">📅 10-Day Trend · ${unit}</div>
+          <div style="font-size:12px;font-weight:800;font-family:'JetBrains Mono',monospace;
+                      color:${isUp?'#16a34a':'#dc2626'}">
+            ${isUp?'▲':'▼'} ${Math.abs(chgP)}% (10d)
           </div>
         </div>
-        <div style="padding:8px 10px 4px;position:relative">
-          <div style="display:flex;align-items:flex-end;gap:3px;height:80px">${bars}</div>
-        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:${color}22">
+              <th style="padding:4px 8px;font-size:10px;color:#6b7280;text-align:left;font-weight:600">Date</th>
+              <th style="padding:4px 8px;font-size:10px;color:#6b7280;text-align:right;font-weight:600">Rate</th>
+              <th style="padding:4px 8px;font-size:10px;color:#6b7280;text-align:right;font-weight:600">Day Chg</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
       </div>`;
     }
 
-    return miniChart(gPrices, days, '#fcd34d', '#b45309', '₹/10g Gold') +
-           miniChart(sPrices, days, '#cbd5e1', '#374151', '₹/kg Silver');
+    return miniTable(gPrices, days, '#fcd34d', '#b45309', '₹/10g Gold',  false) +
+           miniTable(sPrices, days, '#cbd5e1', '#374151', '₹/kg Silver', true);
   }
 
   // ── Attempt 1: GoldPrice.org via allorigins proxy (avoids CORS) ──
