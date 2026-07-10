@@ -297,7 +297,7 @@ def discover_hidden_gems(
 
     # Sample broadly — just check 100 random schemes for launch date
     import random
-    sample = random.sample(all_schemes, min(200, len(all_schemes)))
+    sample = random.sample(all_schemes, min(500, len(all_schemes)))
 
     def check_gem(scheme):
         code = scheme['schemeCode']
@@ -308,7 +308,7 @@ def discover_hidden_gems(
         nav_data = data.get('data', [])
         meta     = data.get('meta', {})
 
-        if len(nav_data) < 10:  # too little history
+        if len(nav_data) < 5:   # too little history
             return None
 
         # Oldest NAV date = launch date
@@ -329,7 +329,7 @@ def discover_hidden_gems(
         ret_since_launch = (current_nav / launch_nav - 1) * 100
 
         # Must have positive return to be a "gem"
-        if ret_since_launch < 0:
+        if ret_since_launch < 0.5:  # at least 0.5% gain since launch
             return None
 
         r1y = calculate_cagr(nav_data, 1, datetime.now())
