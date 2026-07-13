@@ -761,10 +761,9 @@ body {
       </button>
     </div>
 
-    <!-- ══ EQUITY TAB ══ -->
+        <!-- ══ EQUITY TAB ══ -->
     <div id="paneEquity">
 
-    <!-- ── Portfolio BIG ── -->
     <div class="sec-title green">🟢 BUY &amp; WATCH Signals <span class="sec-badge g" id="bdgBuy">0</span></div>
     <div id="listBuy">
       <div class="sig-card BUY">
@@ -865,7 +864,65 @@ body {
 
 
     </div><!-- end paneEquity -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
+      <div>
+    <div class="sec-title red">🔴 SELL Signals — Portfolio Only <span class="sec-badge r" id="bdgSell">0</span></div>
+    <div id="listSell">
+      <div class="info-notice">
+        <span class="ni">💼</span>
+        Add stocks to your portfolio above to see SELL alerts here
+      </div>
+    </div>
 
+      </div>
+      <div style="background:#eff6ff;border-radius:8px;padding:4px 2px">
+    <div class="sec-title blue">🌍 FII / DII Flow</div>
+    <div class="rpanel-section" id="panelFii">
+      <div class="fii-row">
+        <div><div class="fii-label">🌍 FII / FPI</div><div class="fii-sub">BUYING</div></div>
+        <div class="fii-val up">▲ ₹1,240 Cr</div>
+      </div>
+      <div class="fii-row">
+        <div><div class="fii-label">🏠 DII</div><div class="fii-sub">BUYING</div></div>
+        <div class="fii-val up">▲ ₹860 Cr</div>
+      </div>
+      <div class="flow-box bull">
+        <div class="flow-lbl">Overall Market Flow</div>
+        <div class="flow-val">BULLISH</div>
+      </div>
+    </div>
+
+      </div>
+    </div>
+    <div class="sec-title amber">🟡 HOLD Signals — Portfolio Only <span class="sec-badge a" id="bdgHold">0</span></div>
+    <div id="listHold">
+      <div class="info-notice">
+        <span class="ni">💼</span>
+        Add stocks to your portfolio above to see HOLD alerts here
+      </div>
+    </div>
+
+
+    </div><!-- end paneEquity -->
+
+    <!-- ══ MUTUAL FUNDS TAB ══ -->
+    <div id="paneMF" style="display:none">
+
+      <!-- ── Top Funds by Category ── -->
+      <div id="panelMF" style="background:#f0f2f5;padding:0 0 4px;">
+      </div>
+
+      <!-- ── Hidden Gems Section ── -->
+      <div id="panelHiddenGems" style="background:#f0f2f5;padding:0 0 8px;margin-top:2px">
+      </div>
+
+    </div><!-- end paneMF -->
+
+  </div>
+
+
+  <!-- ══ MY PORTFOLIO ══ ═══════════════════════════════ -->
+  <div style="margin:0;padding:0">
     <div class="portfolio-big">
       <div class="port-big-header">
         <div class="port-big-title">💼 My Portfolio — P&amp;L Tracker</div>
@@ -1003,55 +1060,10 @@ body {
       </div>
     </div>
 
-    <div class="sec-title red">🔴 SELL Signals — Portfolio Only <span class="sec-badge r" id="bdgSell">0</span></div>
-    <div id="listSell">
-      <div class="info-notice">
-        <span class="ni">💼</span>
-        Add stocks to your portfolio above to see SELL alerts here
-      </div>
-    </div>
-
-    <div class="sec-title amber">🟡 HOLD Signals — Portfolio Only <span class="sec-badge a" id="bdgHold">0</span></div>
-    <div id="listHold">
-      <div class="info-notice">
-        <span class="ni">💼</span>
-        Add stocks to your portfolio above to see HOLD alerts here
-      </div>
-    </div>
-
-    <!-- ══ MUTUAL FUNDS TAB ══ -->
-    <div id="paneMF" style="display:none">
-
-      <!-- ── Top Funds by Category ── -->
-      <div id="panelMF" style="background:#f0f2f5;padding:0 0 4px;">
-      </div>
-
-      <!-- ── Hidden Gems Section ── -->
-      <div id="panelHiddenGems" style="background:#f0f2f5;padding:0 0 8px;margin-top:2px">
-      </div>
-
-    </div><!-- end paneMF -->
-
   </div>
 
-  <!-- ══ RIGHT COLUMN ═════════════════════════════════════ -->
+  <!-- ══ RIGHT COLUMN ═══════════════════════════════════════════ -->
   <div class="col-right">
-
-    <div class="sec-title blue">🌍 FII / DII Flow</div>
-    <div class="rpanel-section" id="panelFii">
-      <div class="fii-row">
-        <div><div class="fii-label">🌍 FII / FPI</div><div class="fii-sub">BUYING</div></div>
-        <div class="fii-val up">▲ ₹1,240 Cr</div>
-      </div>
-      <div class="fii-row">
-        <div><div class="fii-label">🏠 DII</div><div class="fii-sub">BUYING</div></div>
-        <div class="fii-val up">▲ ₹860 Cr</div>
-      </div>
-      <div class="flow-box bull">
-        <div class="flow-lbl">Overall Market Flow</div>
-        <div class="flow-val">BULLISH</div>
-      </div>
-    </div>
 
     <div class="sec-title blue">🐋 Bulk Deals Today</div>
     <div class="rpanel-section" id="panelBulk">
@@ -1154,11 +1166,7 @@ function tickClock() {
   const ist  = getIST();
   document.getElementById('clockEl').textContent =
     ist.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' IST';
-  const _dEl = document.getElementById('dateEl');
-  if (_dEl) {
-    const _mn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    _dEl.textContent = `${String(ist.getDate()).padStart(2,'0')} ${_mn[ist.getMonth()]} ${ist.getFullYear()}`;
-  }
+  const _dEl=document.getElementById('dateEl'); if(_dEl){const _mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; _dEl.textContent=`${String(ist.getDate()).padStart(2,'0')} ${_mn[ist.getMonth()]} ${ist.getFullYear()}`;}
 
   const open = isMarketOpen();
   const pre  = isPreMarket();
@@ -1696,7 +1704,7 @@ function renderSignals(sigs) {
 
   const portSyms = new Set(_portfolio.map(p => p.sym));
   const stockSigs = sigs.filter(s => !s.is_market_summary);
-  const strong    = stockSigs.filter(s => s.confidence >= 60);  // frontend shows 60%+ (backend generates 70%/57% threshold)
+  const strong    = stockSigs.filter(s => s.confidence >= 75);
 
   const buySigs  = strong.filter(s => s.action === 'BUY' || s.action === 'WATCH');
   const sellSigs = strong.filter(s =>
@@ -1917,7 +1925,7 @@ let _firstLoad = true;
 async function loadData() {
   try {
     const res  = await fetch(BACKEND + '?t=' + Date.now(),
-                             { signal: AbortSignal.timeout(30000) });  // 30s — Render free tier can be slow
+                             { signal: AbortSignal.timeout(30000) });
     // Session expired or not logged in — redirect to login page
     if (res.status === 401 || res.redirected && res.url.includes('/login')) {
       window.location.href = '/login';
@@ -2037,25 +2045,20 @@ async function loadData() {
     if (bulk.length > 0) renderBulk(bulk);
 
     // Risks — only update if market summary exists with risks
-    if (mkt && (mkt.risks || mkt.risks_to_watch || []).length > 0) {
-      renderRisks(mkt.risks || mkt.risks_to_watch);
+    const _risks=(mkt&&(mkt.risks_to_watch||mkt.risks||[]))||[];
+    if (_risks.length > 0) {
+      renderRisks(_risks);
     }
 
   } catch (err) {
     console.warn('Backend unreachable:', err.message);
-    const isTimeout = err.name === 'TimeoutError' || err.message.includes('timeout') || err.message.includes('abort');
-    const msg = isTimeout ? '⏳ Waking up server...' : '⚠ Backend offline';
-    document.getElementById('sbUpd').textContent = msg;
-    document.getElementById('sbUpd').style.color = isTimeout ? '#f59e0b' : '#dc2626';
+    const _isTO=err.name==='TimeoutError'||String(err).includes('timeout');
+    document.getElementById('sbUpd').textContent=_isTO?'⏳ Waking up...':'⚠ Backend offline';
+    document.getElementById('sbUpd').style.color=_isTO?'#f59e0b':'#dc2626';
+    if(_isTO&&!window._wakeRetry){window._wakeRetry=setTimeout(()=>{window._wakeRetry=null;loadData();},15000);}
+    document.getElementById('sbUpd').style.color = '#dc2626';
     document.getElementById('sbMode').textContent = '📊 Demo Mode';
-    // Auto-retry after 15s if it was a timeout (server waking up)
-    if (isTimeout && !window._wakeRetry) {
-      window._wakeRetry = setTimeout(() => {
-        window._wakeRetry = null;
-        document.getElementById('sbUpd').textContent = '🔄 Retrying...';
-        loadData();
-      }, 15000);
-    }
+    // Demo data already showing from init — nothing more needed
   }
 }
 
@@ -2221,86 +2224,8 @@ async function fetchMetals() {
                   padding:6px 0 2px">
         ⚠️ Incl. import duty + GST. Making charges excluded. Rates ±0.5% vs Ranka/Chandu Kaka.
       </div>
-      ${buildHistoryChart(gRates.retailInrGm, sRates.retailInrGm)}`;
-  }
-
-  // ── 10-day Gold/Silver trend chart ─────────────────────────────
-  function buildHistoryChart(gRatePerGm, sRatePerGm) {
-    const today = new Date();
-    const gPer10g   = gRatePerGm * 10;
-    const sPerKg    = sRatePerGm * 1000;
-    const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-    // Build 10 trading days ending today
-    const days = [];
-    let d = new Date(today);
-    while (days.length < 10) {
-      if (d.getDay() !== 0 && d.getDay() !== 6) days.unshift(new Date(d));
-      d.setDate(d.getDate() - 1);
-    }
-
-    // Generate realistic prices with ±0.6% daily variation, anchored to today
-    function genPrices(todayPrice) {
-      const prices = [todayPrice];
-      for (let i = 1; i < days.length; i++) {
-        const v = 1 + (Math.random() - 0.52) * 0.006; // slight upward drift
-        prices.unshift(prices[0] / v);
-      }
-      return prices;
-    }
-
-    const gPrices = genPrices(gPer10g);
-    const sPrices = genPrices(sPerKg);
-
-    function miniChart(prices, dates, color, hlColor, unit) {
-      const min = Math.min(...prices);
-      const max = Math.max(...prices);
-      const range = max - min || 1;
-      const fmt = n => n >= 100000 ? (n/100000).toFixed(2)+'L' : Math.round(n).toLocaleString('en-IN');
-      const chg = prices[prices.length-1] - prices[0];
-      const chgPct = (chg / prices[0] * 100).toFixed(2);
-      const isUp = chg >= 0;
-
-      const bars = prices.map((p, i) => {
-        const isToday = i === prices.length - 1;
-        const h = Math.round(((p - min) / range) * 55 + 12);
-        const dd = String(dates[i].getDate()).padStart(2,'0');
-        const mm = MON[dates[i].getMonth()];
-        return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;cursor:default"
-                     title="${dd} ${mm}: ₹${Math.round(p).toLocaleString('en-IN')}">
-          <div style="font-size:8px;color:${isToday?hlColor:'#9ca3af'};font-family:'JetBrains Mono',monospace;
-                      font-weight:${isToday?800:400};line-height:1">${isToday?'₹'+fmt(p):''}</div>
-          <div style="height:${h}px;width:100%;background:${isToday?hlColor:color};
-                      border-radius:2px 2px 0 0;opacity:${isToday?1:0.55};transition:opacity .2s"
-               onmouseover="this.style.opacity=1;this.nextSibling.nextSibling.style.display='block'"
-               onmouseout="this.style.opacity=${isToday?1:0.55};this.nextSibling.nextSibling.style.display='none'"></div>
-          <div style="font-size:7.5px;color:#9ca3af;white-space:nowrap">${dd}${isToday?' ★':''}</div>
-          <div style="display:none;position:absolute;background:#1e293b;color:#fff;font-size:10px;
-                      padding:3px 7px;border-radius:5px;font-family:'JetBrains Mono',monospace;
-                      pointer-events:none;z-index:100;white-space:nowrap">
-            ${dd} ${mm}: ₹${Math.round(p).toLocaleString('en-IN')}
-          </div>
-        </div>`;
-      }).join('');
-
-      return `<div style="margin-top:10px;border:1.5px solid ${color};border-radius:10px;overflow:hidden">
-        <div style="display:flex;justify-content:space-between;align-items:center;
-                    padding:8px 12px;background:${color}22">
-          <div style="font-size:11px;font-weight:800;color:${hlColor};text-transform:uppercase;letter-spacing:0.5px">
-            10-Day Trend · ${unit}
-          </div>
-          <div style="font-size:12px;font-weight:800;color:${isUp?'#16a34a':'#dc2626'};font-family:'JetBrains Mono',monospace">
-            ${isUp?'▲':'▼'} ${Math.abs(chgPct)}%
-          </div>
-        </div>
-        <div style="padding:8px 10px 4px;position:relative">
-          <div style="display:flex;align-items:flex-end;gap:3px;height:80px">${bars}</div>
-        </div>
-      </div>`;
-    }
-
-    return miniChart(gPrices, days, '#fcd34d', '#b45309', '₹/10g Gold') +
-           miniChart(sPrices, days, '#cbd5e1', '#374151', '₹/kg Silver');
+      <div id="gHistTbl"></div>
+      <div id="sHistTbl"></div>`;
   }
 
   // ── Attempt 1: GoldPrice.org via allorigins proxy (avoids CORS) ──
@@ -2365,6 +2290,7 @@ async function fetchMetals() {
   const gFall = { spotInrGm: 14468, ibjaInrGm: 16062, retailInrGm: 16544 };
   const sFall = { spotInrGm:   145, ibjaInrGm:   161,  retailInrGm:   166 };
   el.innerHTML = buildHTML(gFall, sFall, fallbackUsdInr, 'Approx (Mar 2026)');
+    setTimeout(()=>{const g=document.getElementById('gHistTbl');const s=document.getElementById('sHistTbl');if(g)g.innerHTML=buildMetalHistoryTable(gFall.retailInrGm,false);if(s)s.innerHTML=buildMetalHistoryTable(sFall.retailInrGm,true);},100);
 
   // Then try live APIs in background and update if successful
   try {
@@ -2377,12 +2303,15 @@ async function fetchMetals() {
     }
     if (result) {
       el.innerHTML = buildHTML(result.gRates, result.sRates, result.usdInr, result.src);
+    setTimeout(()=>{const g=document.getElementById('gHistTbl');const s=document.getElementById('sHistTbl');if(g)g.innerHTML=buildMetalHistoryTable(result.gRates.retailInrGm,false);if(s)s.innerHTML=buildMetalHistoryTable(result.sRates.retailInrGm,true);},100);
     } else {
       // Update fallback label from "Loading..." to "Approx"
       el.innerHTML = buildHTML(gFall, sFall, fallbackUsdInr, 'Approx (Mar 2026) ⚠️');
+    setTimeout(()=>{const g=document.getElementById('gHistTbl');const s=document.getElementById('sHistTbl');if(g)g.innerHTML=buildMetalHistoryTable(gFall.retailInrGm,false);if(s)s.innerHTML=buildMetalHistoryTable(sFall.retailInrGm,true);},100);
     }
   } catch(err) {
     el.innerHTML = buildHTML(gFall, sFall, fallbackUsdInr, 'Approx (Mar 2026) ⚠️');
+    setTimeout(()=>{const g=document.getElementById('gHistTbl');const s=document.getElementById('sHistTbl');if(g)g.innerHTML=buildMetalHistoryTable(gFall.retailInrGm,false);if(s)s.innerHTML=buildMetalHistoryTable(sFall.retailInrGm,true);},100);
   }
 }
 
@@ -2671,21 +2600,7 @@ function renderMFFromBackend(mfData) {
 function renderMFLoading(msg) {
   const el = document.getElementById('panelMF');
   if (!el) return;
-  if (!window._mfPollId) {
-    window._mfPollId = setInterval(async () => {
-      try {
-        const r = await fetch('/data.json?t=' + Date.now());
-        if (!r.ok) return;
-        const d = await r.json();
-        if (d.mutual_funds && d.mutual_funds.categories && d.mutual_funds.categories.length > 0) {
-          window._mfDataCache = d.mutual_funds;
-          clearInterval(window._mfPollId);
-          window._mfPollId = null;
-          renderMFFromBackend(d.mutual_funds);
-        }
-      } catch(e) {}
-    }, 10000);
-  }
+  if (!window._mfPollId) { window._mfPollId = setInterval(async()=>{ try{ const r=await fetch('/data.json?t='+Date.now()); if(!r.ok)return; const d=await r.json(); if(d.mutual_funds&&d.mutual_funds.categories&&d.mutual_funds.categories.length>0){ window._mfDataCache=d.mutual_funds; clearInterval(window._mfPollId); window._mfPollId=null; renderMFFromBackend(d.mutual_funds); } }catch(e){} },10000); }
 
   const CAT_COLORS = ['#1d4ed8','#7c3aed','#16a34a','#0891b2','#dc2626','#ea580c','#374151','#9333ea'];
   const CAT_LABELS = ['Large Cap','Mid Cap','Small Cap','Flexi Cap','ELSS','Hybrid','Index','Sectoral'];
