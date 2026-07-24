@@ -863,9 +863,6 @@ body {
 
     </div>
 
-
-    </div><!-- end paneEquity -->
-
     <div class="portfolio-big">
       <div class="port-big-header">
         <div class="port-big-title">💼 My Portfolio — P&amp;L Tracker</div>
@@ -926,6 +923,26 @@ body {
         <span class="port-big-empty">No stocks added yet — type symbol, qty, buy price above</span>
       </div>
     </div>
+
+    <div id="portfolioSignalsBlock">
+      <div class="sec-title red">🔴 SELL Signals — Portfolio Only <span class="sec-badge r" id="bdgSell">0</span></div>
+      <div id="listSell">
+        <div class="info-notice">
+          <span class="ni">💼</span>
+          Add stocks to your portfolio above to see SELL alerts here
+        </div>
+      </div>
+
+      <div class="sec-title amber">🟡 HOLD Signals — Portfolio Only <span class="sec-badge a" id="bdgHold">0</span></div>
+      <div id="listHold">
+        <div class="info-notice">
+          <span class="ni">💼</span>
+          Add stocks to your portfolio above to see HOLD alerts here
+        </div>
+      </div>
+    </div>
+
+    </div><!-- end paneEquity -->
 
     <!-- ── GitHub Settings Modal ── -->
     <div id="ghModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
@@ -1003,22 +1020,6 @@ body {
       </div>
     </div>
 
-    <div class="sec-title red">🔴 SELL Signals — Portfolio Only <span class="sec-badge r" id="bdgSell">0</span></div>
-    <div id="listSell">
-      <div class="info-notice">
-        <span class="ni">💼</span>
-        Add stocks to your portfolio above to see SELL alerts here
-      </div>
-    </div>
-
-    <div class="sec-title amber">🟡 HOLD Signals — Portfolio Only <span class="sec-badge a" id="bdgHold">0</span></div>
-    <div id="listHold">
-      <div class="info-notice">
-        <span class="ni">💼</span>
-        Add stocks to your portfolio above to see HOLD alerts here
-      </div>
-    </div>
-
     <!-- ══ MUTUAL FUNDS TAB ══ -->
     <div id="paneMF" style="display:none">
 
@@ -1028,6 +1029,70 @@ body {
 
       <!-- ── Hidden Gems Section ── -->
       <div id="panelHiddenGems" style="background:#f0f2f5;padding:0 0 8px;margin-top:2px">
+      </div>
+
+      <!-- ── Mutual Fund Holdings — P&L Tracker ── -->
+      <div class="portfolio-big" style="margin-top:2px">
+        <div class="port-big-header">
+          <div class="port-big-title">📈 My Mutual Fund Holdings</div>
+          <button onclick="exportMFPortfolio()" title="Download MF holdings as JSON"
+            style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);
+                   color:#94a3b8;padding:5px 11px;border-radius:6px;font-size:12px;font-weight:700;
+                   cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">⬇ Backup</button>
+        </div>
+        <div class="port-big-sub">Add funds you own · Units + NAV = investment value · Saved on this device</div>
+
+        <!-- Input row -->
+        <div class="port-big-inputs">
+          <input type="text" id="mfInputName" class="port-big-sym"
+            placeholder="Fund name  e.g. Parag Parikh Flexi Cap"
+            autocomplete="off" spellcheck="false" style="flex:1.6">
+          <input type="number" id="mfInputUnits" class="port-big-price"
+            placeholder="Units" min="0.001" step="0.001" style="flex:0.8">
+          <input type="number" id="mfInputNav" class="port-big-price"
+            placeholder="NAV ₹" min="0" step="0.01">
+          <button class="btn-big-add" id="btnMfAdd" onclick="handleAddMFHolding()">+ Add</button>
+        </div>
+
+        <!-- Summary strip -->
+        <div id="mfPortSummary" style="display:none;
+          background:rgba(0,0,0,0.2);border-radius:8px;padding:10px 14px;
+          margin-bottom:10px;gap:24px;flex-wrap:wrap;align-items:center">
+          <div>
+            <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Total Funds</div>
+            <div id="mfPortCount" style="font-size:17px;font-weight:900;color:#f8fafc;font-family:'JetBrains Mono',monospace">—</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Total Units</div>
+            <div id="mfPortUnits" style="font-size:17px;font-weight:900;color:#f8fafc;font-family:'JetBrains Mono',monospace">—</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Investment Value</div>
+            <div id="mfPortValue" style="font-size:20px;font-weight:900;color:#f8fafc;font-family:'JetBrains Mono',monospace">—</div>
+          </div>
+          <div style="margin-left:auto;font-size:11px;color:#64748b;font-style:italic">
+            <span id="mfPortSavedAt"></span>
+          </div>
+        </div>
+
+        <!-- Holdings table -->
+        <div id="mfPortTableWrap" style="display:none;overflow-x:auto;border-radius:8px;border:1px solid rgba(255,255,255,0.1)">
+          <table style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="background:rgba(0,0,0,0.2)">
+                <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px">Fund Name</th>
+                <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px">Units</th>
+                <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px">NAV</th>
+                <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.4px">Investment Value</th>
+                <th style="padding:8px 12px"></th>
+              </tr>
+            </thead>
+            <tbody id="mfPortTableBody"></tbody>
+          </table>
+        </div>
+        <div class="port-big-chips" id="mfPortEmpty">
+          <span class="port-big-empty">No funds added yet — type fund name, units, NAV above</span>
+        </div>
       </div>
 
     </div><!-- end paneMF -->
@@ -1550,6 +1615,123 @@ function exportPortfolio() {
   });
   a.click();
   URL.revokeObjectURL(a.href);
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── Mutual Fund Holdings Tracker (fund name, units, NAV) ────────
+// Saved locally in this browser (localStorage) — no GitHub sync.
+// ══════════════════════════════════════════════════════════════
+let _mfPortfolio = [];
+
+function _loadMFPortfolio() {
+  try {
+    const raw = localStorage.getItem('mfPortfolio');
+    _mfPortfolio = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    _mfPortfolio = [];
+  }
+}
+
+function _saveMFPortfolio() {
+  try {
+    localStorage.setItem('mfPortfolio', JSON.stringify(_mfPortfolio));
+  } catch (e) {
+    console.error('Could not save MF portfolio:', e);
+  }
+}
+
+function handleAddMFHolding() {
+  const nameEl  = document.getElementById('mfInputName');
+  const unitsEl = document.getElementById('mfInputUnits');
+  const navEl   = document.getElementById('mfInputNav');
+
+  const name  = nameEl.value.trim();
+  const units = parseFloat(unitsEl.value);
+  const nav   = parseFloat(navEl.value);
+
+  if (!name) { alert('Enter a fund name.'); nameEl.focus(); return; }
+  if (!units || units <= 0) { alert('Enter valid units.'); unitsEl.focus(); return; }
+  if (!nav || nav <= 0) { alert('Enter a valid NAV.'); navEl.focus(); return; }
+
+  _mfPortfolio.push({
+    id: 'mf_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+    name, units, nav,
+    addedAt: new Date().toISOString()
+  });
+
+  nameEl.value = '';
+  unitsEl.value = '';
+  navEl.value = '';
+  nameEl.focus();
+
+  _saveMFPortfolio();
+  renderMFPortfolio();
+}
+
+function removeMFHolding(id) {
+  _mfPortfolio = _mfPortfolio.filter(h => h.id !== id);
+  _saveMFPortfolio();
+  renderMFPortfolio();
+}
+
+function exportMFPortfolio() {
+  if (!_mfPortfolio.length) { alert('No mutual fund holdings to export.'); return; }
+  const blob = new Blob(
+    [JSON.stringify({ version:1, exportedAt: new Date().toISOString(), holdings: _mfPortfolio }, null, 2)],
+    { type: 'application/json' }
+  );
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: `mutual_fund_holdings_${new Date().toISOString().slice(0,10)}.json`,
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function renderMFPortfolio() {
+  const summaryEl  = document.getElementById('mfPortSummary');
+  const tableWrap  = document.getElementById('mfPortTableWrap');
+  const tbody      = document.getElementById('mfPortTableBody');
+  const emptyEl    = document.getElementById('mfPortEmpty');
+  if (!tbody) return; // MF pane not yet in DOM
+
+  if (!_mfPortfolio.length) {
+    summaryEl.style.display = 'none';
+    tableWrap.style.display = 'none';
+    emptyEl.style.display = '';
+    return;
+  }
+
+  emptyEl.style.display = 'none';
+  summaryEl.style.display = 'flex';
+  tableWrap.style.display = 'block';
+
+  const fmt = n => Math.round(n).toLocaleString('en-IN');
+  let totalUnits = 0, totalValue = 0;
+
+  const rows = _mfPortfolio.map(h => {
+    const value = h.units * h.nav;
+    totalUnits += h.units;
+    totalValue += value;
+    return `<tr style="border-bottom:1px solid rgba(255,255,255,0.08)">
+      <td style="padding:8px 12px;font-size:13px;font-weight:700;color:#f8fafc">${h.name}</td>
+      <td style="padding:8px 12px;font-size:13px;text-align:right;color:#cbd5e1;font-family:'JetBrains Mono',monospace">${h.units}</td>
+      <td style="padding:8px 12px;font-size:13px;text-align:right;color:#cbd5e1;font-family:'JetBrains Mono',monospace">₹${h.nav}</td>
+      <td style="padding:8px 12px;font-size:13px;text-align:right;font-weight:800;color:#f8fafc;font-family:'JetBrains Mono',monospace">₹${fmt(value)}</td>
+      <td style="padding:8px 12px;text-align:center">
+        <button onclick="removeMFHolding('${h.id}')" title="Remove"
+          style="background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);
+                 border-radius:5px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;
+                 font-family:Inter,sans-serif">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  tbody.innerHTML = rows;
+  document.getElementById('mfPortCount').textContent = _mfPortfolio.length;
+  document.getElementById('mfPortUnits').textContent = totalUnits.toLocaleString('en-IN', {maximumFractionDigits:3});
+  document.getElementById('mfPortValue').textContent = '₹' + fmt(totalValue);
+  document.getElementById('mfPortSavedAt').textContent = 'Saved on this device';
 }
 
 // ── Render portfolio chips + P&L summary ─────────────────────────
@@ -3481,6 +3663,9 @@ async function doRefresh() {
 // ── Initialise ────────────────────────────────────────────
 // ── Init: show demo data IMMEDIATELY, update silently from backend ──
 _initPortfolio();  // loads from GitHub (async) or localStorage cache
+
+_loadMFPortfolio();
+renderMFPortfolio();
 renderMutualFunds();
 renderHiddenGems();
 // Mark MF as rendered so tab click doesn't re-render unnecessarily
