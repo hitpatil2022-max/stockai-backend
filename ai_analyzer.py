@@ -32,6 +32,16 @@ SECTION 2 — STOCK DATA (Technicals + Fundamentals)
 {stock_data}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 3 — MARKET INTELLIGENCE (FII/DII flow, bulk deals, insider trades)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{market_intel}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 4 — POLITICAL & BUSINESS INTELLIGENCE (Hidden/indirect connections)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{political_intel}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 YOUR TASK
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -49,6 +59,11 @@ TECHNICAL TIMING:
 - Any significant chart patterns detected?
 - Is this a good entry point right now?
 
+MARKET-WIDE CONTEXT:
+- Using Section 3, assess whether FII/DII flow today supports or contradicts the overall market tone
+- Using Section 4, flag any stock whose price could be indirectly affected by a political/business figure
+  or policy topic mentioned in the news — even if the stock itself wasn't directly named in a headline
+
 COMBINED VERDICT:
 - Give a BUY / SELL / HOLD / WATCH signal
 - Assign confidence 0-100 based on how strong BOTH fundamental AND technical pictures are
@@ -63,6 +78,9 @@ MARKET OVERVIEW:
 - Overall market sentiment for today
 - Single best trade opportunity right now
 - Top 3 risks to watch for Indian market
+- 2-4 "hidden connections" — indirect ways a political/business figure or policy topic from Section 4
+  could move a stock that isn't obviously connected to it in the headline
+- One sentence on how today's FII/DII activity (Section 3) is likely to impact market direction
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT FORMAT — Valid JSON only. No markdown. No text outside the JSON.
@@ -72,6 +90,8 @@ OUTPUT FORMAT — Valid JSON only. No markdown. No text outside the JSON.
   "market_summary": "2 sentence market summary",
   "top_opportunity": "SYMBOL: brief reason",
   "risks_to_watch": ["risk1", "risk2", "risk3"],
+  "hidden_connections": ["e.g. Budget infra push (Section 4) could indirectly lift LT and POWERGRID even though neither was named in today's headlines"],
+  "fii_dii_impact": "1-2 sentence read on how today's FII/DII net flow (Section 3) is likely to influence market direction",
   "stocks": [
     {{
       "symbol": "RELIANCE",
@@ -92,7 +112,7 @@ OUTPUT FORMAT — Valid JSON only. No markdown. No text outside the JSON.
 """
 
 
-def analyze_with_ai(news_items, stock_data, tech_signals):
+def analyze_with_ai(news_items, stock_data, tech_signals, market_intel_text="", political_intel_text=""):
     """Send enriched data to Gemini for intelligent analysis"""
 
     # ── Prepare news (top 15, highest importance first) ──
@@ -156,6 +176,8 @@ def analyze_with_ai(news_items, stock_data, tech_signals):
         date=datetime.now().strftime("%Y-%m-%d %H:%M IST"),
         news=news_text,
         stock_data=stock_text,
+        market_intel=market_intel_text or "Market intelligence data unavailable today.",
+        political_intel=political_intel_text or "No significant political or business figure activity detected.",
     )
 
     try:
