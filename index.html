@@ -399,6 +399,15 @@ body {
 .risk-row:last-child { border-bottom: none; }
 .risk-ico { color: #dc2626; flex-shrink: 0; font-size: 15px; }
 
+.flow-impact { margin-top: 8px; font-size: 11.5px; font-style: italic; color: #64748b; line-height: 1.4; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 8px; }
+
+.pol-row { padding: 11px 0; border-bottom: 1px solid #f0f0f0; }
+.pol-row:last-child { border-bottom: none; }
+.pol-title { font-size: 13px; color: #111827; font-weight: 600; line-height: 1.4; margin-bottom: 5px; }
+.pol-figures { font-size: 11px; color: #7c3aed; font-weight: 700; margin-bottom: 5px; }
+.pol-stocks { display: flex; flex-wrap: wrap; gap: 4px; }
+.pol-chip { font-size: 10.5px; font-weight: 700; color: #4c1d95; background: #ede9fe; border: 1px solid #ddd6fe; padding: 2px 8px; border-radius: 10px; font-family: 'JetBrains Mono', monospace; }
+
 .idx-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
 .idx-row:last-child { border-bottom: none; }
 .idx-rname  { font-size: 15px; font-weight: 700; color: #111827; }
@@ -1115,7 +1124,18 @@ body {
       <div class="flow-box bull">
         <div class="flow-lbl">Overall Market Flow</div>
         <div class="flow-val">BULLISH</div>
+        <div class="flow-impact" id="fiiImpact" style="display:none"></div>
       </div>
+    </div>
+
+    <div class="sec-title purple">🔗 Hidden Connections</div>
+    <div class="rpanel-section" id="panelHidden">
+      <div class="risk-row"><span class="risk-ico" style="color:#7c3aed">🔗</span><span>Analysing news for indirect stock connections...</span></div>
+    </div>
+
+    <div class="sec-title purple">🏛️ Political &amp; Business Radar</div>
+    <div class="rpanel-section" id="panelPolitical">
+      <div class="risk-row"><span class="risk-ico" style="color:#7c3aed">🏛️</span><span>Scanning news for political &amp; business figure mentions...</span></div>
     </div>
 
     <div class="sec-title blue">🐋 Bulk Deals Today</div>
@@ -2059,6 +2079,40 @@ function renderRisks(risks) {
   ).join('');
 }
 
+// ── Render Hidden Connections (AI-derived, from political/business intel) ──
+function renderHiddenConnections(connections) {
+  const el = document.getElementById('panelHidden');
+  if (!el) return;
+  if (!connections || !connections.length) {
+    el.innerHTML = '<p style="font-size:14px;color:#6b7280">No indirect connections flagged today</p>';
+    return;
+  }
+  el.innerHTML = connections.map(c =>
+    `<div class="risk-row"><span class="risk-ico" style="color:#7c3aed">🔗</span><span>${c}</span></div>`
+  ).join('');
+}
+
+// ── Render Political & Business Radar (raw scan results, not AI-filtered) ──
+function renderPoliticalIntel(findings) {
+  const el = document.getElementById('panelPolitical');
+  if (!el) return;
+  if (!findings || !findings.length) {
+    el.innerHTML = '<p style="font-size:14px;color:#6b7280">No political/business figure activity detected today</p>';
+    return;
+  }
+  el.innerHTML = findings.slice(0, 6).map(f => {
+    const figures = (f.figures_mentioned || []).map(pair => pair[1]).join(', ');
+    const sectors = (f.indirect_sectors || []).join(', ');
+    const label = figures || sectors || 'Indirect connection';
+    const stocks = (f.potentially_affected_stocks || []).slice(0, 6);
+    return `<div class="pol-row">
+      <div class="pol-title">${f.title || ''}</div>
+      <div class="pol-figures">👤 ${label}</div>
+      <div class="pol-stocks">${stocks.map(s => `<span class="pol-chip">${s}</span>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
 // ── Index chip updater — called with a {nifty, sensex} object ──
 function setIndexChip(valId, chgId, price, changePct) {
   if (!price || price <= 0) return;
@@ -2221,6 +2275,26 @@ async function loadData() {
     // Risks — only update if market summary exists with risks
     if (mkt && (mkt.risks || mkt.risks_to_watch || []).length > 0) {
       renderRisks(mkt.risks || mkt.risks_to_watch);
+    }
+
+    // Hidden connections — AI-derived indirect links (politician/business/policy → stock)
+    if (mkt && (mkt.hidden_connections || []).length > 0) {
+      renderHiddenConnections(mkt.hidden_connections);
+    }
+
+    // FII/DII impact one-liner — AI's read on today's institutional flow
+    if (mkt && mkt.fii_dii_impact) {
+      const impactEl = document.getElementById('fiiImpact');
+      if (impactEl) {
+        impactEl.textContent = '💡 ' + mkt.fii_dii_impact;
+        impactEl.style.display = 'block';
+      }
+    }
+
+    // Political & Business Radar — raw scan results (news_scraper + political_analyzer)
+    const politicalFindings = data.political_intelligence || [];
+    if (politicalFindings.length > 0) {
+      renderPoliticalIntel(politicalFindings);
     }
 
   } catch (err) {
