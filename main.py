@@ -40,6 +40,8 @@ from signal_engine import generate_signals
 from config import WATCHLIST, LOG_FILE
 from mutual_fund_engine import fetch_top_mutual_funds
 from auth import register_auth_routes, get_current_user, require_auth
+from market_intelligence import fetch_all_market_intelligence, format_for_ai as format_market_intel
+from political_analyzer import scan_for_figures, format_for_ai as format_political_intel
 
 # ── Flask app ────────────────────────────────────────────
 app = Flask(__name__)
@@ -324,8 +326,21 @@ def run_analysis():
         log("Calculating technical indicators...")
         tech_signals = calculate_technical_signals(stock_data)
 
+        log("Fetching market intelligence (FII/DII, bulk deals, insider trades)...")
+        market_intel_data = fetch_all_market_intelligence()
+        market_intel_text = format_market_intel(market_intel_data)
+
+        log("Scanning news for political & business figure connections...")
+        political_findings = scan_for_figures(news_items)
+        political_intel_text = format_political_intel(political_findings)
+        log(f"   {len(political_findings)} politically/business-relevant news items found")
+
         log("Running AI analysis (Gemini)...")
-        ai_insights = analyze_with_ai(news_items, stock_data, tech_signals)
+        ai_insights = analyze_with_ai(
+            news_items, stock_data, tech_signals,
+            market_intel_text=market_intel_text,
+            political_intel_text=political_intel_text,
+        )
 
         log("Generating signals...")
         signals = generate_signals(ai_insights, tech_signals, stock_data)
@@ -334,10 +349,6 @@ def run_analysis():
         indices = fetch_nse_indices()
         if not indices or 'nifty' not in indices:
             indices = extract_yfinance_indices(stock_data)
-
-        mkt_sig    = next((s for s in signals if s.get("is_market_summary")), {})
-        mkt_tone   = (mkt_sig.get("action") or "neutral").lower()
-        is_bullish = mkt_tone == "bullish"
 
         output = {
             "last_updated":    datetime.now(IST).isoformat(),
@@ -348,14 +359,8 @@ def run_analysis():
             "top_news":        news_items[:10],
             "tech_signals":    tech_signals,
             "indices":         indices,
-            "market_intel": {
-                "fii_dii": {
-                    "fii": {"action": "BUYING" if is_bullish else "SELLING", "net_cr": 0},
-                    "dii": {"action": "BUYING" if is_bullish else "SELLING", "net_cr": 0},
-                    "sentiment": mkt_tone,
-                },
-                "bulk_deals": [],
-            }
+            "market_intel":    market_intel_data,
+            "political_intelligence": political_findings,
         }
 
         with open("./data.json", "w", encoding="utf-8") as f:
