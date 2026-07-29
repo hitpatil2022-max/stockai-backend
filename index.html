@@ -841,7 +841,7 @@ body {
           🔄 Refresh AI Picks
         </button>
         <div style="font-size:11px;color:#9ca3af;text-align:center;margin-bottom:12px;margin-top:4px">
-          Analysing 20 penny &amp; emerging stocks — refreshes automatically on load
+          Analysing 20 penny &amp; emerging stocks — click Refresh to run (manual, to protect the shared free API quota)
         </div>
         <div id="suggestResults"></div>
       </div>
@@ -3247,7 +3247,42 @@ function showApiKeyModal(onSuccess) {
 // ── Gemini API wrapper ────────────────────────────────────
 // Free tier: 1500 req/day, 15 req/min — no credit card needed
 // Model: gemini-2.0-flash (free tier, fast, supports JSON mode)
-async function callGeminiAPI(systemPrompt, userPrompt) {
+// ── Shared rate-limit countdown UI — used by both AI Suggestions and Custom Analysis ──
+function renderRateLimitCountdown(containerId, retryFnName) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  let secsLeft = 60;
+  const draw = () => {
+    el.innerHTML = `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:24px 20px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">⏱️</div>
+      <div style="font-size:15px;font-weight:800;color:#c2410c;margin-bottom:4px">Rate Limited</div>
+      <div style="font-size:13px;color:#92400e;margin-bottom:6px">Gemini free tier: 15 requests/min (shared across all visitors)</div>
+      <div style="font-size:12px;color:#78350f;margin-bottom:16px;line-height:1.6">
+        ${secsLeft > 0 ? `Retrying automatically in <strong>${secsLeft}s</strong>…` : 'Ready to retry.'}
+      </div>
+      <button onclick="${retryFnName}()" ${secsLeft > 0 ? 'disabled' : ''}
+        style="background:${secsLeft > 0 ? '#d1d5db' : '#7c3aed'};color:#fff;border:none;border-radius:8px;
+               padding:10px 24px;font-size:13px;font-weight:700;
+               cursor:${secsLeft > 0 ? 'not-allowed' : 'pointer'}">
+        ${secsLeft > 0 ? `Wait ${secsLeft}s` : '🔄 Try Again'}
+      </button>
+    </div>`;
+  };
+  draw();
+  const timer = setInterval(() => {
+    secsLeft--;
+    if (secsLeft <= 0) {
+      clearInterval(timer);
+      secsLeft = 0;
+      draw();
+      window[retryFnName]();   // auto-retry once cooldown genuinely finishes
+    } else {
+      draw();
+    }
+  }, 1000);
+}
+
+async function callGeminiAPI(systemPrompt, userPrompt, rateLimitContainerId, rateLimitRetryFn) {
   const key = getApiKey();
   if (!key) throw new Error('NO_KEY');
 
@@ -3272,17 +3307,8 @@ async function callGeminiAPI(systemPrompt, userPrompt) {
 
   if (resp.status === 400) throw new Error('INVALID_KEY');
   if (resp.status === 429) {
-    // Show countdown timer in UI
-    const sugEl = document.getElementById('suggestResults');
-    if (sugEl) {
-        // STOP - no auto retry, user must click manually
-      sugEl.innerHTML = `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:24px 20px;text-align:center">
-        <div style="font-size:28px;margin-bottom:8px">⏱️</div>
-        <div style="font-size:15px;font-weight:800;color:#c2410c;margin-bottom:4px">Rate Limited</div>
-        <div style="font-size:13px;color:#92400e;margin-bottom:6px">Gemini free tier: 15 requests/min</div>
-        <div style="font-size:12px;color:#78350f;margin-bottom:16px;line-height:1.6">Wait 1-2 minutes then click below.</div>
-        <button onclick="fetchAISuggestions()" style="background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:700;cursor:pointer">🔄 Try Again</button>
-      </div>`;
+    if (rateLimitContainerId && rateLimitRetryFn) {
+      renderRateLimitCountdown(rateLimitContainerId, rateLimitRetryFn);
     }
     throw new Error('rate_limited_handled');
   }
@@ -3437,7 +3463,7 @@ conviction and scores 1–10. risk score = higher means MORE risky. Be honest. B
 
   try {
     const sysPrompt = 'You are a JSON API. Output ONLY a valid JSON array. No markdown, no explanation, no preamble. Start with [ and end with ].';
-    const rawText = await callGeminiAPI(sysPrompt, prompt);
+    const rawText = await callGeminiAPI(sysPrompt, prompt, 'suggestResults', 'fetchAISuggestions');
     clearInterval(_timer);
     const stocks = extractJSONArray(rawText);
     if (!stocks || !stocks.length) throw new Error('No stock data returned — please try again');
@@ -3702,13 +3728,15 @@ Return a JSON array (no markdown). Each object:
       return;
     }
     const sysPrompt = 'You are a JSON API. Output ONLY a valid JSON array. No markdown, no preamble. Start with [ and end with ].';
-    const rawText = await callGeminiAPI(sysPrompt, prompt);
+    const rawText = await callGeminiAPI(sysPrompt, prompt, 'pennyResults', 'runPennyAnalysis');
     const stocks  = extractJSONArray(rawText);
     if (!stocks || !stocks.length) throw new Error('No data returned — please try again');
     results.innerHTML = stocks.map(s => buildSuggestCard(s, s.verdict_class||'watch')).join('');
     results.innerHTML += '<div style="font-size:10px;color:#9ca3af;text-align:center;padding:8px 0;font-style:italic">⚠️ Educational only — not SEBI-registered advice.</div>';
   } catch(err) {
-    if (err.message === 'NO_KEY' || err.message === 'INVALID_KEY') {
+    if (err.message === 'rate_limited_handled') {
+      // Countdown UI already rendered into #pennyResults by callGeminiAPI — nothing more to do
+    } else if (err.message === 'NO_KEY' || err.message === 'INVALID_KEY') {
       _geminiKey = '';
       results.innerHTML = '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:12px;font-size:12px;color:#b91c1c;text-align:center">❌ Invalid key. Update <code>GEMINI_API_KEY</code> in index.html.</div>';
     } else {
