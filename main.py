@@ -42,6 +42,7 @@ from mutual_fund_engine import fetch_top_mutual_funds
 from auth import register_auth_routes, get_current_user, require_auth
 from market_intelligence import fetch_all_market_intelligence, format_for_ai as format_market_intel
 from political_analyzer import scan_for_figures, format_for_ai as format_political_intel
+from fundamental_analyzer import get_fundamentals_cached, compute_industry_pe
 
 # ── Flask app ────────────────────────────────────────────
 app = Flask(__name__)
@@ -323,8 +324,18 @@ def run_analysis():
         log("Fetching stock data...")
         stock_data = get_stock_data(WATCHLIST)
 
+        log("Fetching fundamentals (P/E, ROE, ROCE, debt, 3-year growth)...")
+        fundamentals = get_fundamentals_cached(list(stock_data.keys()))
+        industry_avg_pe = compute_industry_pe(fundamentals)
+        for symbol, f in fundamentals.items():
+            if symbol in stock_data:
+                stock_data[symbol].update(f)   # merges pe_ratio, sector, roe_pct, debt_to_equity, etc.
+                ind_pe = industry_avg_pe.get(f.get("industry") or f.get("sector"))
+                stock_data[symbol]["industry_avg_pe"] = ind_pe
+                stock_data[symbol]["sector_pe"] = ind_pe   # matches the field name ai_analyzer.py already reads
+
         log("Calculating technical indicators...")
-        tech_signals = calculate_technical_signals(stock_data)
+        tech_signals = calculate_technical_signals(stock_data, industry_avg_pe)
 
         log("Fetching market intelligence (FII/DII, bulk deals, insider trades)...")
         market_intel_data = fetch_all_market_intelligence()
