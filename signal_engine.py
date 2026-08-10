@@ -10,6 +10,41 @@ from config import ALERT_CONFIDENCE_THRESHOLD
 # When technical-only, use 62% — AI normally boosts scores so raw tech needs lower bar
 TECH_ONLY_THRESHOLD = 62
 
+
+def _build_technical_dict(tech):
+    """Shared technical sub-object, now including MTF alignment, ADX, and Minervini Trend Template."""
+    return {
+        "rsi":              tech.get("rsi"),
+        "rsi_signal":       tech.get("rsi_signal"),
+        "macd_trend":       tech.get("macd", {}).get("trend"),
+        "volume_spike":     tech.get("volume_spike"),
+        "technical_score":  tech.get("technical_score"),
+        "trend":            tech.get("trend"),
+        "mtf_alignment":    tech.get("mtf_alignment"),
+        "adx":              tech.get("adx"),
+        "minervini":        tech.get("minervini"),
+    }
+
+
+def _strategy_tags(tech):
+    """Short human-readable tags for whichever proven-strategy signals fired — appended to reasons."""
+    tags = []
+    mtf = tech.get("mtf_alignment") or {}
+    if mtf.get("mtf_aligned"):
+        tags.append("Multi-timeframe aligned (M+W+D)")
+    if mtf.get("dip_buy_signal"):
+        tags.append("SMA9 pullback bounce")
+    adx = tech.get("adx") or {}
+    if adx.get("trending"):
+        tags.append(f"ADX trending ({adx.get('adx')})")
+    mine = tech.get("minervini") or {}
+    passed, total = mine.get("criteria_passed"), mine.get("criteria_total")
+    if passed is not None and total:
+        tags.append(f"Minervini {passed}/{total}")
+        if mine.get("rs_rating") is not None:
+            tags.append(f"RS Rating {mine['rs_rating']}")
+    return " · ".join(tags)
+
 def generate_signals(ai_insights, tech_signals, stock_data):
     """
     Combine AI + technical signals into final recommendations.
@@ -90,6 +125,9 @@ def generate_signals(ai_insights, tech_signals, stock_data):
                 f"MACD {macd} · Trend {trend} · Volume spike {vol}x · "
                 f"Score {tech_score}/100"
             )
+            tags = _strategy_tags(tech)
+            if tags:
+                reason += f" · {tags}"
 
         signal = {
             "symbol":        symbol,
@@ -106,14 +144,7 @@ def generate_signals(ai_insights, tech_signals, stock_data):
             "reason":        reason,
             "impact_factors":  ai.get("impact_factors", []) if ai else [],
             "signal_sources":  ai.get("signal_sources", ["technical"]) if ai else ["technical"],
-            "technical": {
-                "rsi":           tech.get("rsi"),
-                "rsi_signal":    tech.get("rsi_signal"),
-                "macd_trend":    tech.get("macd", {}).get("trend"),
-                "volume_spike":  tech.get("volume_spike"),
-                "technical_score": tech_score,
-                "trend":         tech.get("trend"),
-            },
+            "technical": _build_technical_dict(tech),
             "ai_powered":  bool(ai),
             "timestamp":   datetime.now().isoformat(),
             "is_strong":   combined_confidence >= ALERT_CONFIDENCE_THRESHOLD,
@@ -159,6 +190,10 @@ def generate_signals(ai_insights, tech_signals, stock_data):
                 f"MACD={tech.get('macd',{}).get('trend','?')} "
                 f"Score={tech_score}/100"
             )
+            if not ai:
+                tags = _strategy_tags(tech)
+                if tags:
+                    reason += f" · {tags}"
             final_signals.append({
                 "symbol":        symbol,
                 "full_symbol":   symbol_full,
@@ -174,14 +209,7 @@ def generate_signals(ai_insights, tech_signals, stock_data):
                 "reason":        reason,
                 "impact_factors": ai.get("impact_factors",[]) if ai else [],
                 "signal_sources": ["technical"],
-                "technical": {
-                    "rsi":             tech.get("rsi"),
-                    "rsi_signal":      tech.get("rsi_signal"),
-                    "macd_trend":      tech.get("macd",{}).get("trend"),
-                    "volume_spike":    tech.get("volume_spike"),
-                    "technical_score": tech_score,
-                    "trend":           tech.get("trend"),
-                },
+                "technical": _build_technical_dict(tech),
                 "ai_powered":   bool(ai),
                 "timestamp":    datetime.now().isoformat(),
                 "is_strong":    False,
