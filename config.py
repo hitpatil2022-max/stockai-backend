@@ -26,14 +26,14 @@ NIFTY_50 = [
 
     # IT & Tech
     "TCS.NS", "INFY.NS", "WIPRO.NS", "HCLTECH.NS", "TECHM.NS",
-    "LTIMINDTEC.NS",
+    "LTIM.NS",
 
     # Industrial & Infrastructure
     "RELIANCE.NS", "LT.NS", "ADANIENT.NS", "ADANIPORTS.NS",
     "ULTRACEMCO.NS", "GRASIM.NS", "SHREECEM.NS",
 
     # Auto
-    "MARUTI.NS", "TATAMOTORS.NS", "BAJAJ-AUTO.NS", "EICHERMOT.NS",
+    "MARUTI.NS", "TMPV.NS", "BAJAJ-AUTO.NS", "EICHERMOT.NS",
     "HEROMOTOCO.NS", "M&M.NS",
 
     # Pharma & Healthcare
@@ -80,7 +80,7 @@ NIFTY_NEXT_50 = [
     "TORNTPHARM.NS", "AUROPHARMA.NS", "BIOCON.NS", "LUPIN.NS",
 
     # Consumer & Retail
-    "DMART.NS", "PAGEIND.NS", "TRENT.NS", "NYKAA.NS", "ZOMATO.NS",
+    "DMART.NS", "PAGEIND.NS", "TRENT.NS", "NYKAA.NS", "ETERNAL.NS",
 
     # Energy & Power
     "ADANIGREEN.NS", "TATAPOWER.NS", "CESC.NS", "NHPC.NS",
@@ -143,4 +143,4 @@ NEWS_SOURCES = [
 
 LOG_FILE      = "logs/system.log"
 DATA_FILE     = "../dashboard/data.json"
-HISTORY_DAYS  = 90
+HISTORY_DAYS  = 1100  # ~3 years — needed for weekly/monthly MACD convergence + Minervini Trend Template (MA150/MA200 trend)
