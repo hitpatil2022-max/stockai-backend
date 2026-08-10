@@ -10,6 +10,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from config import (HISTORY_DAYS, RSI_OVERSOLD, RSI_OVERBOUGHT,
                     VOLUME_SPIKE_MULTIPLIER, NIFTY_50, NIFTY_NEXT_50, INDEXES)
+from fundamental_analyzer import evaluate_fundamental_quality
 
 # ── Batch download — fetches all stocks in ONE network call ───────────────────
 def get_stock_data(symbols):
@@ -342,10 +343,11 @@ def _rs_raw_score(prices):
         return None
 
 
-def calculate_technical_signals(stock_data):
+def calculate_technical_signals(stock_data, industry_avg_pe=None):
     """Calculate all technical indicators for each stock."""
     signals = {}
     rs_raw_scores = {}   # symbol -> raw RS score, for cross-sectional percentile ranking below
+    industry_avg_pe = industry_avg_pe or {}
 
     for symbol, data in stock_data.items():
         if "hist" not in data or data.get("is_index"):
@@ -384,6 +386,9 @@ def calculate_technical_signals(stock_data):
             rs_raw  = _rs_raw_score(prices)
             if rs_raw is not None:
                 rs_raw_scores[symbol] = rs_raw
+
+            # ── New: fundamental quality — P/E vs industry, 3yr growth, ROE/ROCE, debt ──
+            fundq = evaluate_fundamental_quality(data, industry_avg_pe)
 
             # ── Technical score (0–100) ───────────────────────────────────────
             score = 50
@@ -451,6 +456,9 @@ def calculate_technical_signals(stock_data):
             # ── New: Minervini Trend Template — partial credit per criterion ───
             score += mine["criteria_passed"] * 1.5
 
+            # ── New: fundamental quality — partial credit per criterion ────────
+            score += fundq["criteria_passed"] * 2
+
             signals[symbol] = {
                 "rsi":              rsi,
                 "rsi_signal":       ("oversold"  if rsi < RSI_OVERSOLD else
@@ -471,6 +479,7 @@ def calculate_technical_signals(stock_data):
                 "mtf_alignment":    mtf,
                 "adx":              adx,
                 "minervini":        mine,   # rs_rating filled in below, once the full universe is scored
+                "fundamental_quality": fundq,
             }
 
         except Exception as e:
