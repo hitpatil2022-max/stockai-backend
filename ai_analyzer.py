@@ -58,6 +58,19 @@ TECHNICAL TIMING:
 - Is it above or below 200 DMA? (key signal)
 - Any significant chart patterns detected?
 - Is this a good entry point right now?
+- Each stock's "Strategy signals" line (if present) reports two proven, well-known
+  professional frameworks already computed for you:
+  * MTF-aligned / MonthlyMACD-rising / WeeklyMACD-rising / SMA9-pullback-bounce /
+    ADX-trending — a multi-timeframe trend-alignment + pullback-entry screener
+    (confirms the trend on monthly+weekly+daily simultaneously, and flags a
+    low-risk dip-buy entry when price tests its 9-day average and bounces)
+  * Minervini=X/8 and RS-Rating=Y — Mark Minervini's 8-point "Trend Template"
+    (stage-2 uptrend checklist used by professional trend-followers) and its
+    Relative Strength Rating (0-100 percentile vs. this watchlist; ≥70 is strong)
+  Treat a high Minervini count + high RS-Rating + MTF-aligned as a meaningfully
+  bullish signal — but if the stock also looks extended (RSI>70, near upper
+  Bollinger band), prefer flagging it as "good company, wait for a pullback"
+  rather than an immediate BUY, exactly as Minervini's own approach recommends.
 
 MARKET-WIDE CONTEXT:
 - Using Section 3, assess whether FII/DII flow today supports or contradicts the overall market tone
@@ -147,6 +160,28 @@ def analyze_with_ai(news_items, stock_data, tech_signals, market_intel_text="", 
             pat_names = [f"{p['pattern']}({p['type']})" for p in patterns[:3]]
             pat_line = f"\n  Patterns: {', '.join(pat_names)}"
 
+        # Proven-strategy signals: multi-timeframe alignment, ADX trend strength,
+        # Minervini Trend Template (institutional-grade stage-2 uptrend checklist)
+        mtf  = tech.get("mtf_alignment") or {}
+        adx  = tech.get("adx") or {}
+        mine = tech.get("minervini") or {}
+        strat_bits = []
+        if mtf.get("mtf_aligned"):
+            strat_bits.append("MTF-aligned(M+W+D)")
+        if mtf.get("monthly_macd_rising"):
+            strat_bits.append("MonthlyMACD-rising")
+        if mtf.get("weekly_macd_rising"):
+            strat_bits.append("WeeklyMACD-rising")
+        if mtf.get("dip_buy_signal"):
+            strat_bits.append("SMA9-pullback-bounce")
+        if adx.get("trending"):
+            strat_bits.append(f"ADX-trending({adx.get('adx')})")
+        if mine.get("criteria_passed") is not None:
+            strat_bits.append(f"Minervini={mine['criteria_passed']}/{mine.get('criteria_total',8)}")
+        if mine.get("rs_rating") is not None:
+            strat_bits.append(f"RS-Rating={mine['rs_rating']}")
+        strat_line = f"\n  Strategy signals: {', '.join(strat_bits)}" if strat_bits else ""
+
         # Fundamental summary
         pe      = stock.get("pe_ratio")
         sec_pe  = stock.get("sector_pe")
@@ -168,7 +203,7 @@ def analyze_with_ai(news_items, stock_data, tech_signals, market_intel_text="", 
             f"Sector={sector}"
         )
 
-        stock_lines.append(f"\n{sym}:\n{tech_line}{pat_line}\n{fund_line}")
+        stock_lines.append(f"\n{sym}:\n{tech_line}{pat_line}{strat_line}\n{fund_line}")
 
     stock_text = "\n".join(stock_lines)
 
