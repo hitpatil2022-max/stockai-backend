@@ -12,7 +12,8 @@ TECH_ONLY_THRESHOLD = 62
 
 
 def _build_technical_dict(tech):
-    """Shared technical sub-object, now including MTF alignment, ADX, and Minervini Trend Template."""
+    """Shared technical sub-object, now including MTF alignment, ADX, Minervini Trend Template,
+    and fundamental quality (P/E vs industry, 3yr growth, ROE/ROCE, debt)."""
     return {
         "rsi":              tech.get("rsi"),
         "rsi_signal":       tech.get("rsi_signal"),
@@ -23,6 +24,7 @@ def _build_technical_dict(tech):
         "mtf_alignment":    tech.get("mtf_alignment"),
         "adx":              tech.get("adx"),
         "minervini":        tech.get("minervini"),
+        "fundamental_quality": tech.get("fundamental_quality"),
     }
 
 
@@ -43,6 +45,10 @@ def _strategy_tags(tech):
         tags.append(f"Minervini {passed}/{total}")
         if mine.get("rs_rating") is not None:
             tags.append(f"RS Rating {mine['rs_rating']}")
+    fundq = tech.get("fundamental_quality") or {}
+    fpassed, ftotal = fundq.get("criteria_passed"), fundq.get("criteria_total")
+    if fpassed is not None and ftotal:
+        tags.append(f"Fundamentals {fpassed}/{ftotal}")
     return " · ".join(tags)
 
 def generate_signals(ai_insights, tech_signals, stock_data):
