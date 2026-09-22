@@ -349,6 +349,13 @@ body {
 .fact-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 .fact-chip { font-size: 11.5px; font-weight: 600; padding: 3px 9px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; border-radius: 4px; }
 
+.strat-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.strat-chip { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 10px; white-space: nowrap; }
+.strat-chip.mtf   { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+.strat-chip.minervini { background: #fdf4ff; border: 1px solid #f0abfc; color: #a21caf; }
+.strat-chip.fund  { background: #fffbeb; border: 1px solid #fde68a; color: #b45309; }
+.strat-chip.adx   { background: #eef2ff; border: 1px solid #c7d2fe; color: #4338ca; }
+
 /* ── NEWS ─────────────────────────────────────────────── */
 .news-card {
   background: #fff;
@@ -394,6 +401,13 @@ body {
 .deal-buy  { font-size: 11.5px; font-weight: 800; padding: 2px 9px; border-radius: 5px; background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
 .deal-sell { font-size: 11.5px; font-weight: 800; padding: 2px 9px; border-radius: 5px; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
 .deal-client { font-size: 12.5px; color: #6b7280; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.deal-value { font-size: 11.5px; font-weight: 700; color: #4338ca; margin-left: auto; font-family: 'JetBrains Mono', monospace; }
+.deal-meta { display: flex; gap: 10px; font-size: 11px; color: #9ca3af; margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+.deal-date { color: #9ca3af; font-weight: 500; }
+.deal-narrative { font-size: 12px; color: #4b5563; line-height: 1.5; margin-top: 7px; font-style: italic; }
+.deal-impact { margin-top: 8px; padding: 8px 10px; background: #f9fafb; border-left: 3px solid #d1d5db; border-radius: 4px; }
+.deal-impact-tag { font-size: 12px; font-weight: 700; color: #1f2937; margin-bottom: 3px; }
+.deal-impact-note { font-size: 11px; color: #6b7280; line-height: 1.5; }
 
 .risk-row { display: flex; gap: 8px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 13.5px; color: #374151; line-height: 1.5; }
 .risk-row:last-child { border-bottom: none; }
@@ -743,6 +757,33 @@ body {
         <div class="news-ttl">Crude oil steadies near $85; petro stocks watch global cues</div>
         <div class="news-foot"><span class="news-src">Business Standard</span><span class="news-stk">ONGC</span><span class="news-score">⭐ 7.5/10</span></div>
       </div>
+    </div>
+
+    <div class="sec-title blue">🌍 FII / DII Flow</div>
+    <div class="rpanel-section" id="panelFii">
+      <div class="fii-row">
+        <div><div class="fii-label">🌍 FII / FPI</div><div class="fii-sub">BUYING</div></div>
+        <div class="fii-val up">▲ ₹1,240 Cr</div>
+      </div>
+      <div class="fii-row">
+        <div><div class="fii-label">🏠 DII</div><div class="fii-sub">BUYING</div></div>
+        <div class="fii-val up">▲ ₹860 Cr</div>
+      </div>
+      <div class="flow-box bull">
+        <div class="flow-lbl">Overall Market Flow</div>
+        <div class="flow-val">BULLISH</div>
+        <div class="flow-impact" id="fiiImpact" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="sec-title purple">🔗 Hidden Connections</div>
+    <div class="rpanel-section" id="panelHidden">
+      <div class="risk-row"><span class="risk-ico" style="color:#7c3aed">🔗</span><span>Analysing news for indirect stock connections...</span></div>
+    </div>
+
+    <div class="sec-title purple">🏛️ Political &amp; Business Radar</div>
+    <div class="rpanel-section" id="panelPolitical">
+      <div class="risk-row"><span class="risk-ico" style="color:#7c3aed">🏛️</span><span>Scanning news for political &amp; business figure mentions...</span></div>
     </div>
   </div>
 
@@ -1111,38 +1152,11 @@ body {
   <!-- ══ RIGHT COLUMN ═════════════════════════════════════ -->
   <div class="col-right">
 
-    <div class="sec-title blue">🌍 FII / DII Flow</div>
-    <div class="rpanel-section" id="panelFii">
-      <div class="fii-row">
-        <div><div class="fii-label">🌍 FII / FPI</div><div class="fii-sub">BUYING</div></div>
-        <div class="fii-val up">▲ ₹1,240 Cr</div>
-      </div>
-      <div class="fii-row">
-        <div><div class="fii-label">🏠 DII</div><div class="fii-sub">BUYING</div></div>
-        <div class="fii-val up">▲ ₹860 Cr</div>
-      </div>
-      <div class="flow-box bull">
-        <div class="flow-lbl">Overall Market Flow</div>
-        <div class="flow-val">BULLISH</div>
-        <div class="flow-impact" id="fiiImpact" style="display:none"></div>
-      </div>
-    </div>
-
-    <div class="sec-title purple">🔗 Hidden Connections</div>
-    <div class="rpanel-section" id="panelHidden">
-      <div class="risk-row"><span class="risk-ico" style="color:#7c3aed">🔗</span><span>Analysing news for indirect stock connections...</span></div>
-    </div>
-
-    <div class="sec-title purple">🏛️ Political &amp; Business Radar</div>
-    <div class="rpanel-section" id="panelPolitical">
-      <div class="risk-row"><span class="risk-ico" style="color:#7c3aed">🏛️</span><span>Scanning news for political &amp; business figure mentions...</span></div>
-    </div>
-
     <div class="sec-title blue">🐋 Bulk Deals Today</div>
     <div class="rpanel-section" id="panelBulk">
-      <div class="deal-row"><div class="deal-top"><span class="deal-sym">TCS</span><span class="deal-buy">BUY</span></div><div class="deal-client">Government of Singapore (GIC)</div></div>
-      <div class="deal-row"><div class="deal-top"><span class="deal-sym">RELIANCE</span><span class="deal-buy">BUY</span></div><div class="deal-client">Fidelity International Ltd</div></div>
-      <div class="deal-row"><div class="deal-top"><span class="deal-sym">HDFCBANK</span><span class="deal-sell">SELL</span></div><div class="deal-client">Morgan Stanley Asia Singapore</div></div>
+      <div class="deal-row"><div class="deal-top"><span class="deal-sym">TCS</span><span class="deal-buy">BUY</span><span class="deal-value">₹480.31 Cr</span></div><div class="deal-client">Government of Singapore (GIC)</div><div class="deal-meta"><span>12,50,000 shares</span><span>@ ₹3,842.50</span></div></div>
+      <div class="deal-row"><div class="deal-top"><span class="deal-sym">RELIANCE</span><span class="deal-buy">BUY</span><span class="deal-value">₹217.20 Cr</span></div><div class="deal-client">Fidelity International Ltd</div><div class="deal-meta"><span>8,00,000 shares</span><span>@ ₹2,715.00</span></div></div>
+      <div class="deal-row"><div class="deal-top"><span class="deal-sym">HDFCBANK</span><span class="deal-sell">SELL</span><span class="deal-value">₹78.36 Cr</span></div><div class="deal-client">Morgan Stanley Asia Singapore</div><div class="deal-meta"><span>5,00,000 shares</span><span>@ ₹1,567.25</span></div></div>
     </div>
 
     <div class="sec-title red">⚠️ Risks to Watch</div>
@@ -1867,6 +1881,8 @@ function buildSignalCard(s) {
   const facHtml = factors.length
     ? `<div class="fact-chips">${factors.map(f => `<span class="fact-chip">${f}</span>`).join('')}</div>` : '';
 
+  const stratHtml = buildStrategyChips(s.technical || {});
+
   return `<div class="sig-card ${s.action}">
     <div class="sig-top">
       <div class="sig-left">
@@ -1887,9 +1903,36 @@ function buildSignalCard(s) {
     </div>
     <div class="conf-bar-wrap"><div class="conf-fill ${confCls}" style="width:${s.confidence}%"></div></div>
     <div class="sig-reason">${s.reason || ''}</div>
+    ${stratHtml}
     ${levelsHtml}
     ${facHtml}
   </div>`;
+}
+
+// ── Strategy badges: multi-timeframe alignment, ADX, Minervini Trend Template, fundamentals ──
+function buildStrategyChips(tech) {
+  const chips = [];
+  const mtf  = tech.mtf_alignment || {};
+  const adx  = tech.adx || {};
+  const mine = tech.minervini || {};
+  const fund = tech.fundamental_quality || {};
+
+  if (mtf.mtf_aligned) chips.push({ cls: 'mtf', label: '📈 MTF Aligned' });
+  if (mtf.dip_buy_signal) chips.push({ cls: 'mtf', label: '↩️ SMA9 Bounce' });
+  if (adx.trending) chips.push({ cls: 'adx', label: `⚡ ADX ${adx.adx}` });
+  if (mine.criteria_passed != null && mine.criteria_total) {
+    chips.push({ cls: 'minervini', label: `🏆 Minervini ${mine.criteria_passed}/${mine.criteria_total}` });
+  }
+  if (mine.rs_rating != null) {
+    chips.push({ cls: 'minervini', label: `RS ${mine.rs_rating}` });
+  }
+  if (fund.criteria_passed != null && fund.criteria_total) {
+    chips.push({ cls: 'fund', label: `💰 Fundamentals ${fund.criteria_passed}/${fund.criteria_total}` });
+  }
+
+  if (!chips.length) return '';
+  return `<div class="strat-chips">${chips.map(c =>
+    `<span class="strat-chip ${c.cls}">${c.label}</span>`).join('')}</div>`;
 }
 
 // ── Render Signals ────────────────────────────────────────
@@ -2057,14 +2100,37 @@ function renderBulk(deals) {
     </div>`;
     return;
   }
-  el.innerHTML = deals.slice(0, 6).map(d => `
+  // Indian number formatting (lakh/crore grouping) for share quantity
+  const fmtQty = n => (n || 0).toLocaleString('en-IN');
+  const fmtPrice = n => n ? `₹${Number(n).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}` : '—';
+  // Prefer the backend's own value_cr (computed once, server-side); fall back to
+  // computing it client-side for older cached data.json responses that predate this field.
+  const dealValueCr = d => d.value_cr != null ? d.value_cr
+                          : (d.quantity && d.price) ? +((d.quantity * d.price) / 1e7).toFixed(2) : null;
+
+  el.innerHTML = deals.slice(0, 6).map(d => {
+    const valueCr = dealValueCr(d);
+    const impact = d.impact || null;   // {tag, note, tier, marquee_institution} — may be absent on old cached data
+    return `
     <div class="deal-row">
       <div class="deal-top">
         <span class="deal-sym">${d.symbol}</span>
         <span class="${d.action === 'BUY' ? 'deal-buy' : 'deal-sell'}">${d.action}</span>
+        ${valueCr ? `<span class="deal-value">₹${valueCr} Cr</span>` : ''}
       </div>
-      <div class="deal-client">${d.client || ''}</div>
-    </div>`).join('');
+      <div class="deal-client">${d.client || ''}${d.date ? ` <span class="deal-date">· ${d.date}</span>` : ''}</div>
+      <div class="deal-meta">
+        <span>${fmtQty(d.quantity)} shares</span>
+        <span>@ ${fmtPrice(d.price)}</span>
+      </div>
+      ${d.narrative ? `<div class="deal-narrative">${d.narrative}</div>` : ''}
+      ${impact ? `
+        <div class="deal-impact">
+          <div class="deal-impact-tag">${impact.tag}</div>
+          <div class="deal-impact-note">${impact.note}</div>
+        </div>` : ''}
+    </div>`;
+  }).join('');
 }
 
 // ── Render Risks ──────────────────────────────────────────
@@ -3248,15 +3314,39 @@ function showApiKeyModal(onSuccess) {
 // Free tier: 1500 req/day, 15 req/min — no credit card needed
 // Model: gemini-2.0-flash (free tier, fast, supports JSON mode)
 // ── Shared rate-limit countdown UI — used by both AI Suggestions and Custom Analysis ──
-function renderRateLimitCountdown(containerId, retryFnName) {
+let _rateLimitStreak = {};  // tracks consecutive 429s per container, since last success
+
+function renderRateLimitCountdown(containerId, retryFnName, retryDelaySecs, streak) {
   const el = document.getElementById(containerId);
   if (!el) return;
-  let secsLeft = 60;
+
+  // After 3 consecutive hits with no success in between, this is very unlikely to be
+  // a simple per-minute limit anymore — stop the silent loop and tell the user plainly.
+  if (streak >= 3) {
+    el.innerHTML = `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:24px 20px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">🚫</div>
+      <div style="font-size:15px;font-weight:800;color:#c2410c;margin-bottom:4px">Still Rate Limited After ${streak} Retries</div>
+      <div style="font-size:13px;color:#92400e;margin-bottom:8px;line-height:1.6">
+        This isn't clearing on its own, which usually means the shared key has hit
+        <strong>today's free-tier cap (1,500 requests/day)</strong> — not just the 15/min limit.
+      </div>
+      <div style="font-size:12px;color:#78350f;margin-bottom:16px;line-height:1.6">
+        Gemini's free tier resets at midnight Pacific time — roughly <strong>1:30 PM IST</strong>.
+        Auto-retry has been paused so it stops competing for the shared quota.
+      </div>
+      <button onclick="_rateLimitStreak['${containerId}']=0; ${retryFnName}()"
+        style="background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:10px 24px;
+               font-size:13px;font-weight:700;cursor:pointer">🔄 Try Again Manually</button>
+    </div>`;
+    return;
+  }
+
+  let secsLeft = retryDelaySecs && retryDelaySecs > 0 ? retryDelaySecs : 60;
   const draw = () => {
     el.innerHTML = `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:24px 20px;text-align:center">
       <div style="font-size:28px;margin-bottom:8px">⏱️</div>
       <div style="font-size:15px;font-weight:800;color:#c2410c;margin-bottom:4px">Rate Limited</div>
-      <div style="font-size:13px;color:#92400e;margin-bottom:6px">Gemini free tier: 15 requests/min (shared across all visitors)</div>
+      <div style="font-size:13px;color:#92400e;margin-bottom:6px">Gemini free tier: 15 requests/min (shared across all visitors) · attempt ${streak}/3</div>
       <div style="font-size:12px;color:#78350f;margin-bottom:16px;line-height:1.6">
         ${secsLeft > 0 ? `Retrying automatically in <strong>${secsLeft}s</strong>…` : 'Ready to retry.'}
       </div>
@@ -3307,8 +3397,19 @@ async function callGeminiAPI(systemPrompt, userPrompt, rateLimitContainerId, rat
 
   if (resp.status === 400) throw new Error('INVALID_KEY');
   if (resp.status === 429) {
+    // Read Gemini's ACTUAL error instead of guessing a flat 60s wait every time
+    let retryDelaySecs = null;
+    try {
+      const errBody = await resp.json();
+      const details = errBody?.error?.details || [];
+      const retryInfo = details.find(d => (d['@type'] || '').includes('RetryInfo'));
+      const m = retryInfo?.retryDelay ? /^([\d.]+)s$/.exec(retryInfo.retryDelay) : null;
+      if (m) retryDelaySecs = Math.ceil(parseFloat(m[1]));
+    } catch (e) { /* body not JSON or already consumed — fall back to default wait */ }
+
     if (rateLimitContainerId && rateLimitRetryFn) {
-      renderRateLimitCountdown(rateLimitContainerId, rateLimitRetryFn);
+      _rateLimitStreak[rateLimitContainerId] = (_rateLimitStreak[rateLimitContainerId] || 0) + 1;
+      renderRateLimitCountdown(rateLimitContainerId, rateLimitRetryFn, retryDelaySecs, _rateLimitStreak[rateLimitContainerId]);
     }
     throw new Error('rate_limited_handled');
   }
@@ -3318,6 +3419,8 @@ async function callGeminiAPI(systemPrompt, userPrompt, rateLimitContainerId, rat
   }
 
   const data = await resp.json();
+  // Successful call — clear any rate-limit streak tracked for this container
+  if (rateLimitContainerId) _rateLimitStreak[rateLimitContainerId] = 0;
   // Gemini response: data.candidates[0].content.parts[0].text
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
   return text;
