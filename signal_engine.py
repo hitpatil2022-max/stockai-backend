@@ -1,279 +1,335 @@
 """
-⚡ Signal Engine - Combines AI + Technical analysis for final signals
-Fixed: technical-only mode now generates visible signals even without AI
+Market Intelligence - FII/DII Data, Bulk Deals, Insider Trades
+All from free public sources (NSE/BSE/Moneycontrol)
 """
 
-from datetime import datetime
-from config import ALERT_CONFIDENCE_THRESHOLD
+import requests
+import json
+from datetime import datetime, timedelta
 
-# When AI is available, require 75% confidence
-# When technical-only, use 62% — AI normally boosts scores so raw tech needs lower bar
-TECH_ONLY_THRESHOLD = 62
+# NSE requires browser-like headers to avoid blocks
+NSE_HEADERS = {
+    "User-Agent":      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept":          "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer":         "https://www.nseindia.com/",
+    "Connection":      "keep-alive",
+}
+
+def get_nse_session():
+    """Create a session with NSE cookies (required for API access)"""
+    session = requests.Session()
+    try:
+        # Visit homepage first to get cookies
+        session.get("https://www.nseindia.com", headers=NSE_HEADERS, timeout=10)
+    except Exception:
+        pass
+    return session
+
+def fetch_fii_dii_data():
+    """
+    Fetch FII/DII buy-sell activity for today
+    Source: NSE India (free, public data)
+    FII = Foreign Institutional Investors
+    DII = Domestic Institutional Investors
+
+    NOTE: field names below (buyValue/sellValue/netValue/category) were verified
+    against a real captured NSE response — the previous version of this function
+    used "bought"/"sold" (fields that don't exist in NSE's actual response), which
+    silently produced 0.0 for every value while "raw" showed the real numbers
+    right next to it. Also removed an incorrect /100 division — NSE already
+    reports these in ₹ Crores directly, confirmed by buyValue - sellValue == netValue
+    on real data (e.g. 18256.88 - 16592.72 = 1664.16, matching netValue exactly).
+    """
+    try:
+        session = get_nse_session()
+        url = "https://www.nseindia.com/api/fiidiiTradeReact"
+        response = session.get(url, headers=NSE_HEADERS, timeout=10)
+
+        if response.status_code == 200:
+            data = response.json()
+            result = {
+                "date":        datetime.now().strftime("%Y-%m-%d"),
+                "fii":         {},
+                "dii":         {},
+                "sentiment":   "neutral",
+                "raw":         data[:2] if data else []
+            }
+
+            for entry in data[:2]:
+                category = entry.get("category", "").upper()
+                bought   = float(str(entry.get("buyValue", "0")).replace(",", "") or 0)
+                sold     = float(str(entry.get("sellValue", "0")).replace(",", "") or 0)
+                net_raw  = entry.get("netValue")
+                net      = float(str(net_raw).replace(",", "")) if net_raw not in (None, "") else (bought - sold)
+
+                if "FII" in category or "FPI" in category:
+                    result["fii"] = {
+                        "bought_cr": round(bought, 2),
+                        "sold_cr":   round(sold, 2),
+                        "net_cr":    round(net, 2),
+                        "action":    "BUYING" if net > 0 else "SELLING",
+                    }
+                elif "DII" in category:
+                    result["dii"] = {
+                        "bought_cr": round(bought, 2),
+                        "sold_cr":   round(sold, 2),
+                        "net_cr":    round(net, 2),
+                        "action":    "BUYING" if net > 0 else "SELLING",
+                    }
+
+            # Overall sentiment
+            fii_net = result["fii"].get("net_cr", 0)
+            dii_net = result["dii"].get("net_cr", 0)
+            if fii_net > 500 or dii_net > 500:
+                result["sentiment"] = "strongly_bullish"
+            elif fii_net > 0 and dii_net > 0:
+                result["sentiment"] = "bullish"
+            elif fii_net < -500 or dii_net < -500:
+                result["sentiment"] = "strongly_bearish"
+            elif fii_net < 0 and dii_net < 0:
+                result["sentiment"] = "bearish"
+
+            print("   FII/DII data fetched successfully")
+            return result
+
+    except Exception as e:
+        print("   Warning: FII/DII fetch failed: " + str(e))
+
+    return {"date": datetime.now().strftime("%Y-%m-%d"), "fii": {}, "dii": {}, "sentiment": "unknown"}
 
 
-def _build_technical_dict(tech):
-    """Shared technical sub-object, now including MTF alignment, ADX, Minervini Trend Template,
-    and fundamental quality (P/E vs industry, 3yr growth, ROE/ROCE, debt)."""
+# ── Bulk deal enrichment: narrative sentence + rule-based impact tag ────────
+# Deliberately NOT another Gemini call — the app already fights a shared 15/min
+# free-tier quota; this is a deterministic, explainable, zero-cost alternative.
+KNOWN_MARQUEE_INSTITUTIONS = [
+    "government of singapore", "gic", "temasek", "norges bank",
+    "abu dhabi investment", "qatar investment", "blackrock", "vanguard",
+    "fidelity", "capital group", "t. rowe price", "t rowe price",
+    "morgan stanley", "goldman sachs", "jpmorgan", "jp morgan",
+    "life insurance corporation", " lic ", "sbi mutual fund",
+    "hdfc mutual fund", "icici prudential", "kotak mahindra mutual",
+    "axis mutual fund", "nomura", "citigroup", "hsbc",
+]
+
+
+def _deal_size_tier(value_cr):
+    if value_cr is None:
+        return "Unknown"
+    if value_cr >= 100:
+        return "Major"
+    if value_cr >= 25:
+        return "Significant"
+    return "Moderate"
+
+
+def _is_marquee_institution(client_name):
+    if not client_name:
+        return False
+    name_l = f" {client_name.lower()} "
+    return any(k in name_l for k in KNOWN_MARQUEE_INSTITUTIONS)
+
+
+def _deal_narrative(deal):
+    """One-sentence plain-English description of the actual deal."""
+    verb = "bought" if deal["action"] == "BUY" else "sold"
+    qty = deal.get("quantity") or 0
+    qty_str = f"{int(qty):,}" if qty else "an undisclosed number of"
+    value_str = f" worth ₹{deal['value_cr']} Cr" if deal.get("value_cr") else ""
+    price_str = f" at ₹{deal['price']:,.2f}/share" if deal.get("price") else ""
+    date_str = f" on {deal['date']}" if deal.get("date") else ""
+    stock_label = deal.get("name") or deal.get("symbol", "this stock")
+    client = deal.get("client") or "An investor"
+    return f"{client} {verb} {qty_str} shares of {stock_label}{value_str}{price_str}{date_str}."
+
+
+def _deal_impact(deal):
+    """
+    Rule-based, deterministic impact read — NOT an AI guess. Based only on:
+    (1) deal size tier, (2) whether the buyer/seller is a well-known institution,
+    (3) buy vs. sell direction. Deliberately hedged language — a single bulk deal
+    is a data point, not a prediction.
+    """
+    tier = _deal_size_tier(deal.get("value_cr"))
+    marquee = _is_marquee_institution(deal.get("client", ""))
+
+    if tier == "Unknown":
+        return {"tier": tier, "tag": "ℹ️ Limited data",
+                "note": "Deal value couldn't be computed from available quantity/price data.",
+                "marquee_institution": marquee}
+
+    if deal["action"] == "BUY":
+        if marquee and tier in ("Major", "Significant"):
+            tag = "🟢 Bullish — Marquee institutional buying"
+            note = (f"A well-known institutional investor made a {tier.lower()} purchase. "
+                     "Large, reputable buyers accumulating a stock is often read as a vote of "
+                     "confidence, though it doesn't guarantee future price direction.")
+        elif tier == "Major":
+            tag = "🟢 Bullish — Large buying activity"
+            note = ("A large single-day purchase of this size can reflect strong institutional "
+                     "conviction, though the buyer's strategy (long-term hold vs. short-term "
+                     "arbitrage) isn't disclosed by NSE.")
+        else:
+            tag = "🟡 Mildly positive"
+            note = ("A moderate buy — worth watching if followed by more buying in subsequent "
+                     "sessions, but not a strong signal on its own.")
+    else:
+        if marquee and tier in ("Major", "Significant"):
+            tag = "🔴 Cautionary — Marquee institutional selling"
+            note = (f"A well-known institutional investor made a {tier.lower()} sale. This can "
+                     "reflect profit-booking or portfolio rebalancing rather than a negative "
+                     "view — context beyond this single data point matters.")
+        elif tier == "Major":
+            tag = "🔴 Cautionary — Large selling activity"
+            note = ("A large single-day sale can reflect profit-booking or a strategic exit. "
+                     "Worth checking if this is a one-off or part of a sustained trend.")
+        else:
+            tag = "🟡 Mildly cautionary"
+            note = "A moderate sell — not significant enough alone to draw strong conclusions."
+
+    return {"tier": tier, "tag": tag, "note": note, "marquee_institution": marquee}
+
+
+def fetch_bulk_deals():
+    """
+    Fetch today's bulk deals from NSE
+    Bulk deal = large trade (>0.5% of total shares) by big players
+    This reveals where smart money is moving
+
+    NOTE: field names below (BD_SYMBOL, BD_CLIENT_NAME, BD_QTY_TRD, etc.) were
+    verified against a real captured NSE bulk-deals response — the previous
+    version of this function used plain names like "symbol"/"clientName"/
+    "tradedQty" that don't exist in NSE's actual response, so every field
+    silently came back empty/zero and every deal defaulted to SELL regardless
+    of the real action.
+    """
+    try:
+        session = get_nse_session()
+        url = "https://www.nseindia.com/api/bulk-deals"
+        response = session.get(url, headers=NSE_HEADERS, timeout=10)
+
+        if response.status_code == 200:
+            data  = response.json()
+            deals = data.get("data", [])[:20]  # Top 20 deals
+
+            processed = []
+            for deal in deals:
+                symbol = deal.get("BD_SYMBOL", "")
+                name   = deal.get("BD_SCRIP_NAME", "")
+                client = deal.get("BD_CLIENT_NAME", "")
+                action = "BUY" if "BUY" in str(deal.get("BD_BUY_SELL", "")).upper() else "SELL"
+                qty    = float(str(deal.get("BD_QTY_TRD", 0)).replace(",", "") or 0)
+                price  = float(str(deal.get("BD_TP_WATP", 0)).replace(",", "") or 0)
+                date   = deal.get("BD_DT_DATE", "")
+                value_cr = round((qty * price) / 1e7, 2) if qty and price else None
+
+                item = {
+                    "symbol": symbol, "name": name, "client": client,
+                    "action": action, "quantity": qty, "price": price,
+                    "date": date, "value_cr": value_cr,
+                }
+                item["narrative"] = _deal_narrative(item)
+                item["impact"] = _deal_impact(item)
+                processed.append(item)
+
+            print("   Bulk deals fetched: " + str(len(processed)) + " deals today")
+            return processed
+
+    except Exception as e:
+        print("   Warning: Bulk deals fetch failed: " + str(e))
+
+    return []
+
+
+def fetch_insider_trades():
+    """
+    Fetch recent insider trading disclosures from NSE
+    SEBI requires insiders to disclose trades within 2 trading days
+    """
+    try:
+        session = get_nse_session()
+        url = "https://www.nseindia.com/api/corporates-pit"
+        params = {"index": "equities", "from_date": (datetime.now() - timedelta(days=7)).strftime("%d-%m-%Y"),
+                  "to_date": datetime.now().strftime("%d-%m-%Y")}
+        response = session.get(url, headers=NSE_HEADERS, params=params, timeout=10)
+
+        if response.status_code == 200:
+            data   = response.json()
+            trades = data.get("data", [])[:15]
+
+            processed = []
+            for trade in trades:
+                qty       = float(str(trade.get("noOfShareBroughtSold", "0")).replace(",", "") or 0)
+                buy_sell  = str(trade.get("typeOfSecurity", "")).upper()
+                processed.append({
+                    "symbol":   trade.get("symbol", ""),
+                    "insider":  trade.get("personName", ""),
+                    "role":     trade.get("typeOfPerson", ""),
+                    "action":   "BUY" if "BUY" in buy_sell or qty > 0 else "SELL",
+                    "quantity": qty,
+                    "value_cr": round(qty * float(str(trade.get("tradedPrice", 0)).replace(",", "") or 0) / 10000000, 2),
+                    "date":     trade.get("date", ""),
+                })
+
+            print("   Insider trades fetched: " + str(len(processed)) + " disclosures")
+            return processed
+
+    except Exception as e:
+        print("   Warning: Insider trades fetch failed: " + str(e))
+
+    return []
+
+def fetch_all_market_intelligence():
+    """Fetch all market intelligence data in one call"""
+    print("   Fetching FII/DII data...")
+    fii_dii = fetch_fii_dii_data()
+
+    print("   Fetching bulk deals...")
+    bulk_deals = fetch_bulk_deals()
+
+    print("   Fetching insider trades...")
+    insider_trades = fetch_insider_trades()
+
     return {
-        "rsi":              tech.get("rsi"),
-        "rsi_signal":       tech.get("rsi_signal"),
-        "macd_trend":       tech.get("macd", {}).get("trend"),
-        "volume_spike":     tech.get("volume_spike"),
-        "technical_score":  tech.get("technical_score"),
-        "trend":            tech.get("trend"),
-        "mtf_alignment":    tech.get("mtf_alignment"),
-        "adx":              tech.get("adx"),
-        "minervini":        tech.get("minervini"),
-        "fundamental_quality": tech.get("fundamental_quality"),
+        "fii_dii":       fii_dii,
+        "bulk_deals":    bulk_deals,
+        "insider_trades": insider_trades,
+        "fetched_at":    datetime.now().isoformat(),
     }
 
+def format_for_ai(intel):
+    """Format market intelligence data compactly for AI prompt"""
+    lines = []
 
-def _strategy_tags(tech):
-    """Short human-readable tags for whichever proven-strategy signals fired — appended to reasons."""
-    tags = []
-    mtf = tech.get("mtf_alignment") or {}
-    if mtf.get("mtf_aligned"):
-        tags.append("Multi-timeframe aligned (M+W+D)")
-    if mtf.get("dip_buy_signal"):
-        tags.append("SMA9 pullback bounce")
-    adx = tech.get("adx") or {}
-    if adx.get("trending"):
-        tags.append(f"ADX trending ({adx.get('adx')})")
-    mine = tech.get("minervini") or {}
-    passed, total = mine.get("criteria_passed"), mine.get("criteria_total")
-    if passed is not None and total:
-        tags.append(f"Minervini {passed}/{total}")
-        if mine.get("rs_rating") is not None:
-            tags.append(f"RS Rating {mine['rs_rating']}")
-    fundq = tech.get("fundamental_quality") or {}
-    fpassed, ftotal = fundq.get("criteria_passed"), fundq.get("criteria_total")
-    if fpassed is not None and ftotal:
-        tags.append(f"Fundamentals {fpassed}/{ftotal}")
-    return " · ".join(tags)
+    # FII/DII
+    fii = intel.get("fii_dii", {})
+    if fii.get("fii") or fii.get("dii"):
+        fii_data = fii.get("fii", {})
+        dii_data = fii.get("dii", {})
+        lines.append("FII/DII Activity:")
+        if fii_data:
+            lines.append("  FII: " + fii_data.get("action", "?") + " Net=" + str(fii_data.get("net_cr", 0)) + " Cr")
+        if dii_data:
+            lines.append("  DII: " + dii_data.get("action", "?") + " Net=" + str(dii_data.get("net_cr", 0)) + " Cr")
+        lines.append("  Sentiment: " + fii.get("sentiment", "unknown").upper())
 
-def generate_signals(ai_insights, tech_signals, stock_data):
-    """
-    Combine AI + technical signals into final recommendations.
-    
-    With AI:    confidence = (AI × 60%) + (technical × 40%)  → threshold 75%
-    Without AI: confidence = technical score directly          → threshold 62%
-    """
+    # Bulk deals (top 5)
+    bulk = intel.get("bulk_deals", [])
+    if bulk:
+        lines.append("\nBulk Deals (Big Money Moves):")
+        for deal in bulk[:5]:
+            lines.append("  " + deal["symbol"] + ": " + deal["action"]
+                         + " by " + deal["client"][:40]
+                         + " @ " + str(deal["price"]))
 
-    final_signals = []
-    ai_stocks     = {s["symbol"]: s for s in ai_insights.get("stocks", [])}
-    ai_available  = bool(ai_stocks)
+    # Insider trades (top 5)
+    insider = intel.get("insider_trades", [])
+    if insider:
+        lines.append("\nInsider Trades (Last 7 days):")
+        for trade in insider[:5]:
+            lines.append("  " + trade["symbol"] + ": " + trade["action"]
+                         + " by " + trade["insider"][:30]
+                         + " (" + trade["role"] + ")"
+                         + " Value=₹" + str(trade["value_cr"]) + "Cr")
 
-    for symbol_full, tech in tech_signals.items():
-        symbol    = symbol_full.replace(".NS", "").replace("^", "")
-        stock     = stock_data.get(symbol_full, {})
-        ai        = ai_stocks.get(symbol)
-        tech_score = tech.get("technical_score", 50)
-
-        # ── Confidence calculation ──────────────────────────────────────────
-        if ai:
-            # Full AI + technical blend
-            combined_confidence = round((ai["confidence"] * 0.6) + (tech_score * 0.4))
-        else:
-            # Technical-only: use raw score but apply a soft boost
-            # RSI, MACD and volume together — if all agree, score is reliable
-            rsi        = tech.get("rsi", 50)
-            rsi_signal = tech.get("rsi_signal", "neutral")
-            macd_trend = tech.get("macd", {}).get("trend", "neutral")
-            vol_spike  = tech.get("volume_spike", 1)
-
-            # Boost score if multiple indicators agree
-            alignment_bonus = 0
-            if rsi_signal == "oversold" and macd_trend == "bullish":
-                alignment_bonus = 8
-            elif rsi_signal == "overbought" and macd_trend == "bearish":
-                alignment_bonus = 8
-            elif (rsi_signal in ("oversold","bullish")) and macd_trend == "bullish":
-                alignment_bonus = 5
-            elif (rsi_signal in ("overbought","bearish")) and macd_trend == "bearish":
-                alignment_bonus = 5
-
-            if vol_spike >= 2:
-                alignment_bonus += 4   # High volume confirms the move
-
-            combined_confidence = min(85, tech_score + alignment_bonus)
-
-        # ── Action ─────────────────────────────────────────────────────────
-        if ai:
-            action = ai["action"]
-        else:
-            rsi_signal = tech.get("rsi_signal", "neutral")
-            macd_trend = tech.get("macd", {}).get("trend", "neutral")
-            if tech_score >= 70 or rsi_signal == "oversold":
-                action = "BUY"
-            elif tech_score <= 32 or rsi_signal == "overbought":
-                action = "SELL"
-            elif tech_score >= 58:
-                action = "WATCH"
-            else:
-                action = "HOLD"
-
-        # ── Threshold filter ────────────────────────────────────────────────
-        # AI mode: 70% | Technical-only mode: 57%
-        threshold = 70 if ai_available else 57
-        if combined_confidence < threshold:
-            continue
-
-        # ── Build reason ────────────────────────────────────────────────────
-        if ai:
-            reason = ai.get("reason", f"Technical score: {tech_score}/100")
-        else:
-            rsi    = tech.get("rsi", "N/A")
-            macd   = tech.get("macd", {}).get("trend", "N/A")
-            trend  = tech.get("trend", "N/A")
-            vol    = tech.get("volume_spike", 1)
-            reason = (
-                f"Technical analysis: RSI {rsi} ({tech.get('rsi_signal','')}) · "
-                f"MACD {macd} · Trend {trend} · Volume spike {vol}x · "
-                f"Score {tech_score}/100"
-            )
-            tags = _strategy_tags(tech)
-            if tags:
-                reason += f" · {tags}"
-
-        signal = {
-            "symbol":        symbol,
-            "full_symbol":   symbol_full,
-            "name":          stock.get("name", symbol),
-            "current_price": stock.get("current_price", 0),
-            "change_pct":    stock.get("change_pct", 0),
-            "action":        action,
-            "confidence":    combined_confidence,
-            "time_horizon":  ai.get("time_horizon", "swing") if ai else "swing",
-            "target_price":  ai.get("target_price") if ai else calculate_target(stock, tech, action),
-            "stop_loss":     ai.get("stop_loss") if ai else calculate_stop_loss(stock, tech, action),
-            "risk_level":    ai.get("risk_level", "MEDIUM") if ai else assess_risk(tech),
-            "reason":        reason,
-            "impact_factors":  ai.get("impact_factors", []) if ai else [],
-            "signal_sources":  ai.get("signal_sources", ["technical"]) if ai else ["technical"],
-            "technical": _build_technical_dict(tech),
-            "ai_powered":  bool(ai),
-            "timestamp":   datetime.now().isoformat(),
-            "is_strong":   combined_confidence >= ALERT_CONFIDENCE_THRESHOLD,
-        }
-        final_signals.append(signal)
-
-    # ── Expand if fewer than 7 BUY/WATCH signals found ─────────────────
-    MIN_SIGNALS = 7
-    buy_watch_count = sum(1 for s in final_signals
-                          if not s.get('is_market_summary') and
-                          s.get('action') in ('BUY','WATCH'))
-
-    if buy_watch_count < MIN_SIGNALS:
-        # Lower threshold and retry with ALL remaining stocks
-        lower_threshold = 60 if ai_available else 50
-        for symbol_full, tech in tech_signals.items():
-            symbol = symbol_full.replace(".NS","").replace("^","")
-            # Skip already added signals
-            if any(s.get('symbol') == symbol for s in final_signals):
-                continue
-            stock     = stock_data.get(symbol_full, {})
-            ai        = ai_stocks.get(symbol)
-            tech_score = tech.get("technical_score", 50)
-
-            if ai:
-                score = round((ai["confidence"] * 0.6) + (tech_score * 0.4))
-            else:
-                score = min(85, tech_score)
-
-            if score < lower_threshold:
-                continue
-
-            action = ai["action"] if ai else (
-                "BUY"   if tech_score >= 70 else
-                "WATCH" if tech_score >= 58 else
-                "HOLD"
-            )
-            if action not in ("BUY","WATCH"):
-                continue
-
-            reason = ai.get("reason","") if ai else (
-                f"Technical: RSI={tech.get('rsi','?')} "
-                f"MACD={tech.get('macd',{}).get('trend','?')} "
-                f"Score={tech_score}/100"
-            )
-            if not ai:
-                tags = _strategy_tags(tech)
-                if tags:
-                    reason += f" · {tags}"
-            final_signals.append({
-                "symbol":        symbol,
-                "full_symbol":   symbol_full,
-                "name":          stock.get("name", symbol),
-                "current_price": stock.get("current_price", 0),
-                "change_pct":    stock.get("change_pct", 0),
-                "action":        action,
-                "confidence":    score,
-                "time_horizon":  ai.get("time_horizon","swing") if ai else "swing",
-                "target_price":  ai.get("target_price") if ai else calculate_target(stock, tech, action),
-                "stop_loss":     ai.get("stop_loss") if ai else calculate_stop_loss(stock, tech, action),
-                "risk_level":    ai.get("risk_level","MEDIUM") if ai else assess_risk(tech),
-                "reason":        reason,
-                "impact_factors": ai.get("impact_factors",[]) if ai else [],
-                "signal_sources": ["technical"],
-                "technical": _build_technical_dict(tech),
-                "ai_powered":   bool(ai),
-                "timestamp":    datetime.now().isoformat(),
-                "is_strong":    False,
-                "expanded":     True,  # flag — added via expansion
-            })
-
-    # Sort by confidence
-    final_signals.sort(key=lambda x: x["confidence"], reverse=True)
-
-    # Market summary card
-    meta = {
-        "symbol":          "MARKET",
-        "action":          ai_insights.get("market_sentiment", "neutral").upper(),
-        "confidence":      100,
-        "reason":          ai_insights.get("market_summary", "Technical-only mode — AI quota exhausted, resets at midnight IST"),
-        "top_opportunity": ai_insights.get("top_opportunity", ""),
-        "risks":           ai_insights.get("risks_to_watch", []),
-        "hidden_connections": ai_insights.get("hidden_connections", []),
-        "fii_dii_impact":  ai_insights.get("fii_dii_impact", ""),
-        "ai_powered":      bool(ai_stocks),
-        "timestamp":       datetime.now().isoformat(),
-        "is_market_summary": True,
-    }
-    final_signals.insert(0, meta)
-
-    return final_signals
-
-
-def calculate_target(stock, tech, action):
-    price = stock.get("current_price", 0)
-    if not price:
-        return None
-    sr = tech.get("support_resistance", {})
-    if action in ("BUY", "WATCH"):
-        resistance = sr.get("resistance", price * 1.05)
-        return round(min(resistance, price * 1.08), 2)
-    elif action == "SELL":
-        support = sr.get("support", price * 0.95)
-        return round(max(support, price * 0.93), 2)
-    return None
-
-
-def calculate_stop_loss(stock, tech, action):
-    price = stock.get("current_price", 0)
-    if not price:
-        return None
-    if action in ("BUY", "WATCH"):
-        return round(price * 0.97, 2)   # 3% stop loss
-    elif action == "SELL":
-        return round(price * 1.03, 2)   # 3% stop loss on short
-    return None
-
-
-def assess_risk(tech):
-    score      = tech.get("technical_score", 50)
-    vol_spike  = tech.get("volume_spike", 1)
-    if vol_spike > 3 or abs(score - 50) > 30:
-        return "HIGH"
-    elif abs(score - 50) > 15:
-        return "MEDIUM"
-    return "LOW"
+    return "\n".join(lines) if lines else "Market intelligence data unavailable today."
